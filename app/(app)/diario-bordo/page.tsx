@@ -24,11 +24,11 @@ const DEFAULT_FORM: Omit<Logbook, 'id'> = {
   hora_saida: '',
   data_chegada: '',
   hora_chegada: '',
-  km_inicial: 0,
-  km_final: 0,
+  km_inicial: '' as number | string,
+  km_final: '' as number | string,
   abastecimento: false,
-  valor_abastecido: 0,
-  litros_abastecidos: 0,
+  valor_abastecido: '' as number | string,
+  litros_abastecidos: '' as number | string,
   ocorrencias: '',
   status: 'Em andamento',
 };
@@ -397,11 +397,11 @@ export default function DiarioBordoPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>KM Inicial</Label>
-                <Input required type="number" min="0" value={formData.km_inicial || ''} onChange={e => setFormData({...formData, km_inicial: Number(e.target.value)})} />
+                <Input required type="number" min="0" value={formData.km_inicial} onChange={e => setFormData({...formData, km_inicial: e.target.value === '' ? '' : Number(e.target.value)})} />
               </div>
               <div className="space-y-2">
                 <Label>KM Final</Label>
-                <Input type="number" min="0" value={formData.km_final || ''} onChange={e => setFormData({...formData, km_final: Number(e.target.value)})} />
+                <Input type="number" min="0" value={formData.km_final} onChange={e => setFormData({...formData, km_final: e.target.value === '' ? '' : Number(e.target.value)})} />
               </div>
               <div className="space-y-2">
                 <Label>Distância</Label>

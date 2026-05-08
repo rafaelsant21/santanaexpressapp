@@ -26,9 +26,9 @@ export default function ManutencaoPage() {
     motorista: '',
     tipo: 'preventiva' as MaintenanceType,
     descricao: '',
-    custo: 0,
+    custo: '' as number | string,
     data: new Date().toISOString().substring(0, 10),
-    km: 0,
+    km: '' as number | string,
     status: 'pendente' as MaintenanceStatus
   });
 
@@ -89,9 +89,9 @@ export default function ManutencaoPage() {
         motorista: '',
         tipo: 'preventiva',
         descricao: '',
-        custo: 0,
+        custo: '' as number | string,
         data: new Date().toISOString().substring(0, 10),
-        km: 0,
+        km: '' as number | string,
         status: 'pendente'
       });
     }
@@ -333,7 +333,7 @@ export default function ManutencaoPage() {
                 type="number"
                 min="0"
                 value={formData.km} 
-                onChange={e => setFormData({...formData, km: parseInt(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, km: e.target.value === '' ? '' : parseInt(e.target.value)})}
               />
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function ManutencaoPage() {
                 type="number"
                 min="0" step="0.01"
                 value={formData.custo} 
-                onChange={e => setFormData({...formData, custo: parseFloat(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, custo: e.target.value === '' ? '' : parseFloat(e.target.value)})}
               />
             </div>
             <div className="space-y-2">

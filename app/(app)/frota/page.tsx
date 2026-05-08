@@ -20,9 +20,9 @@ export default function FrotaPage() {
     placa: '',
     modelo: '',
     marca: '',
-    ano: new Date().getFullYear(),
+    ano: new Date().getFullYear() as number | string,
     status: 'ativo' as VehicleStatus,
-    km_atual: 0
+    km_atual: '' as number | string
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,9 +60,9 @@ export default function FrotaPage() {
         placa: '',
         modelo: '',
         marca: '',
-        ano: new Date().getFullYear(),
+        ano: new Date().getFullYear() as number | string,
         status: 'ativo',
-        km_atual: 0
+        km_atual: '' as number | string
       });
     }
     setIsModalOpen(true);
@@ -209,7 +209,7 @@ export default function FrotaPage() {
                 type="number"
                 min="1990" max="2100"
                 value={formData.ano} 
-                onChange={e => setFormData({...formData, ano: parseInt(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, ano: e.target.value === '' ? '' : parseInt(e.target.value)})}
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function FrotaPage() {
                 type="number"
                 min="0"
                 value={formData.km_atual} 
-                onChange={e => setFormData({...formData, km_atual: parseInt(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, km_atual: e.target.value === '' ? '' : parseInt(e.target.value)})}
               />
             </div>
             <div className="space-y-2">

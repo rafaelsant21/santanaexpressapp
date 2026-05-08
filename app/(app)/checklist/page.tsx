@@ -25,7 +25,7 @@ const DEFAULT_FORM = {
   vehicle_id: '',
   data: new Date().toISOString().substring(0, 16),
   motorista: '',
-  km_atual: 0,
+  km_atual: '' as number | string,
   tipo_viagem: 'Entrega' as TipoViagem,
   itens_check: { ...DEFAULT_ITENS },
   observacoes: '',
@@ -313,7 +313,7 @@ export default function ChecklistPage() {
           {/* Linha 3: KM atual */}
           <div className="space-y-1">
             <Label>KM atual do veículo</Label>
-            <Input required type="number" min={0} placeholder="Ex: 125000" value={formData.km_atual || ''} onChange={e => setFormData({ ...formData, km_atual: Number(e.target.value) })} />
+            <Input required type="number" min={0} placeholder="Ex: 125000" value={formData.km_atual} onChange={e => setFormData({ ...formData, km_atual: e.target.value === '' ? '' : Number(e.target.value) })} />
           </div>
 
           {/* Itens de verificação */}

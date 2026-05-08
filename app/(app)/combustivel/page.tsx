@@ -25,9 +25,9 @@ export default function CombustivelPage() {
     vehicle_id: '',
     motorista: '',
     data: new Date().toISOString().substring(0, 10),
-    litros: 0,
-    valor_total: 0,
-    km_no_abastecimento: 0
+    litros: '' as number | string,
+    valor_total: '' as number | string,
+    km_no_abastecimento: '' as number | string
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,9 +86,9 @@ export default function CombustivelPage() {
         vehicle_id: vehicles[0]?.id || '',
         motorista: '',
         data: new Date().toISOString().substring(0, 10),
-        litros: 0,
-        valor_total: 0,
-        km_no_abastecimento: 0
+        litros: '' as number | string,
+        valor_total: '' as number | string,
+        km_no_abastecimento: '' as number | string
       });
     }
     setIsModalOpen(true);
@@ -334,7 +334,7 @@ export default function CombustivelPage() {
                 type="number"
                 min="0"
                 value={formData.km_no_abastecimento} 
-                onChange={e => setFormData({...formData, km_no_abastecimento: parseInt(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, km_no_abastecimento: e.target.value === '' ? '' : parseInt(e.target.value)})}
               />
             </div>
           </div>
@@ -347,7 +347,7 @@ export default function CombustivelPage() {
                 type="number"
                 min="0.1" step="0.1"
                 value={formData.litros} 
-                onChange={e => setFormData({...formData, litros: parseFloat(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, litros: e.target.value === '' ? '' : parseFloat(e.target.value)})}
               />
             </div>
             <div className="space-y-2">
@@ -357,7 +357,7 @@ export default function CombustivelPage() {
                 type="number"
                 min="0.01" step="0.01"
                 value={formData.valor_total} 
-                onChange={e => setFormData({...formData, valor_total: parseFloat(e.target.value) || 0})}
+                onChange={e => setFormData({...formData, valor_total: e.target.value === '' ? '' : parseFloat(e.target.value)})}
               />
             </div>
           </div>
