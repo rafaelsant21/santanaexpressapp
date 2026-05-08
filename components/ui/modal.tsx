@@ -15,22 +15,22 @@ export function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, o
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div 
-        className="absolute inset-0 bg-background/80 backdrop-blur-sm" 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative z-50 w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-xl sm:rounded-xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+        <div className="flex shrink-0 items-center justify-between border-b border-border/50 p-4 sm:p-6">
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           <button 
             onClick={onClose}
-            className="rounded-full p-1 hover:bg-muted text-muted-foreground transition-colors"
+            className="rounded-full p-2 hover:bg-muted text-muted-foreground transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div>
+        <div className="overflow-y-auto p-4 sm:p-6">
           {children}
         </div>
       </div>

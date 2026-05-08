@@ -209,7 +209,7 @@ export default function DiarioBordoPage() {
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
         {/* Dashboard Rápido */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <Route className="h-6 w-6 text-blue-400" />
@@ -240,8 +240,8 @@ export default function DiarioBordoPage() {
         </div>
 
         <Card className="p-0 bg-[#1e293b] rounded-xl border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm text-left min-w-[700px]">
               <thead className="bg-[#111827]">
                 <tr>
                   <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Data/Saída</th>
@@ -332,7 +332,7 @@ export default function DiarioBordoPage() {
           {/* SEÇÃO 1: Info Viagem */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80">Informações da Viagem</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Veículo</Label>
                 <Select required value={formData.vehicle_id} onChange={e => setFormData({...formData, vehicle_id: e.target.value})}>
@@ -348,7 +348,7 @@ export default function DiarioBordoPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de Viagem</Label>
                 <Select value={formData.tipo_viagem} onChange={e => setFormData({...formData, tipo_viagem: e.target.value as TipoViagem})}>
@@ -369,7 +369,7 @@ export default function DiarioBordoPage() {
           {/* SEÇÃO 2: Horários */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80">Horários</h3>
-            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
               <div className="space-y-2">
                 <Label>Data de Saída</Label>
                 <Input type="date" value={formData.data_saida || ''} onChange={e => setFormData({...formData, data_saida: e.target.value})} />
@@ -379,7 +379,7 @@ export default function DiarioBordoPage() {
                 <Input type="time" value={formData.hora_saida || ''} onChange={e => setFormData({...formData, hora_saida: e.target.value})} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
               <div className="space-y-2">
                 <Label>Data de Chegada</Label>
                 <Input type="date" value={formData.data_chegada || ''} onChange={e => setFormData({...formData, data_chegada: e.target.value})} />
@@ -394,7 +394,7 @@ export default function DiarioBordoPage() {
           {/* SEÇÃO 3: Kilometragem */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80">Quilometragem</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>KM Inicial</Label>
                 <Input required type="number" min="0" value={formData.km_inicial || ''} onChange={e => setFormData({...formData, km_inicial: Number(e.target.value)})} />
@@ -435,7 +435,7 @@ export default function DiarioBordoPage() {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-2 border-t border-border mt-6">
+          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

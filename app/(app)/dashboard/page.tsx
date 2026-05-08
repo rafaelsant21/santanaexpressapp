@@ -124,7 +124,7 @@ export default function DashboardPage() {
         )}
 
         {/* ── Stat Cards ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {[
             { label: 'Total Frota',            value: stats.total,             sub: 'veículos',    icon: Truck },
             { label: 'Ativos',                 value: stats.ativos,            sub: 'em operação', icon: Truck },
@@ -151,7 +151,8 @@ export default function DashboardPage() {
             <div className="px-5 py-3.5 border-b border-border/60">
               <h2 className="text-sm font-medium">Últimos Abastecimentos</h2>
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr className="border-b border-border/40">
                   {['Veículo', 'Data', 'Litros', 'Valor'].map(h => (
@@ -178,6 +179,7 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Manutenções Pendentes */}
@@ -185,7 +187,8 @@ export default function DashboardPage() {
             <div className="px-5 py-3.5 border-b border-border/60">
               <h2 className="text-sm font-medium">Manutenções Pendentes</h2>
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[400px]">
               <thead>
                 <tr className="border-b border-border/40">
                   {['Veículo', 'Serviço', 'Status'].map(h => (
@@ -211,6 +214,7 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
@@ -222,7 +226,8 @@ export default function DashboardPage() {
           {vehicleCosts.length === 0 ? (
             <p className="px-5 py-6 text-sm text-muted-foreground text-center">Nenhum dado disponível.</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-border/40">
                   {['Veículo', 'Status', 'KM Atual', 'Combustível', 'Manutenção', 'Total'].map(h => (
@@ -263,6 +268,7 @@ export default function DashboardPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 

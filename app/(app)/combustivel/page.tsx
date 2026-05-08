@@ -216,8 +216,8 @@ export default function CombustivelPage() {
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
         <Card className="p-0 bg-[#1e293b] rounded-xl border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm text-left min-w-[700px]">
               <thead className="bg-[#111827]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Data</th>
@@ -315,7 +315,7 @@ export default function CombustivelPage() {
             </Select>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Data</Label>
               <Input 
@@ -337,7 +337,7 @@ export default function CombustivelPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Litros</Label>
               <Input 
@@ -360,7 +360,7 @@ export default function CombustivelPage() {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2">
+          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-2">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

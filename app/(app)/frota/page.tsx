@@ -129,8 +129,8 @@ export default function FrotaPage() {
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-sm text-left min-w-[600px]">
             <thead className="bg-[#111827]">
               <tr>
                 <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Placa</th>
@@ -190,7 +190,7 @@ export default function FrotaPage() {
         title={editingVehicle ? 'Editar Veículo' : 'Novo Veículo'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Placa</Label>
               <Input 
@@ -212,7 +212,7 @@ export default function FrotaPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Marca</Label>
               <Input 
@@ -233,7 +233,7 @@ export default function FrotaPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>KM Atual</Label>
               <Input 
@@ -257,7 +257,7 @@ export default function FrotaPage() {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2">
+          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-4">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

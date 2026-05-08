@@ -200,8 +200,8 @@ export default function ChecklistPage() {
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8">
         <Card className="p-0 bg-[#1e293b] rounded-xl border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-sm text-left min-w-[800px]">
               <thead className="bg-[#111827]">
                 <tr>
                   {['Data/Hora', 'Veículo', 'Motorista', 'KM', 'Tipo', 'Itens', 'Status', ''].map(h => (
@@ -277,7 +277,7 @@ export default function ChecklistPage() {
         <form onSubmit={handleSubmit} className="space-y-3">
 
           {/* Linha 1: Veículo + Data */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Veículo</Label>
               <Select required value={formData.vehicle_id} onChange={e => setFormData({ ...formData, vehicle_id: e.target.value })}>
@@ -292,7 +292,7 @@ export default function ChecklistPage() {
           </div>
 
           {/* Linha 2: Motorista + Tipo de viagem */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Motorista</Label>
               <Select required value={formData.motorista} onChange={e => setFormData({ ...formData, motorista: e.target.value })}>
@@ -331,16 +331,16 @@ export default function ChecklistPage() {
                     <Icon className={`h-3.5 w-3.5 ${grupo.color}`} />
                     <span className={`text-[10px] font-semibold uppercase tracking-wide ${grupo.color}`}>{grupo.label}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-0 p-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 p-2">
                     {grupo.items.map(item => (
                       <label key={item.key} className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded hover:bg-muted/40 transition-colors">
                         <input
                           type="checkbox"
-                          className="w-3.5 h-3.5 rounded border-border accent-primary"
+                          className="w-5 h-5 md:w-3.5 md:h-3.5 rounded border-border accent-primary"
                           checked={formData.itens_check[item.key as ItemKey]}
                           onChange={() => toggleItem(item.key as ItemKey)}
                         />
-                        <span className="text-xs">{item.label}</span>
+                        <span className="text-[14px] md:text-xs">{item.label}</span>
                       </label>
                     ))}
                   </div>
@@ -387,7 +387,7 @@ export default function ChecklistPage() {
             );
           })()}
 
-          <div className="pt-2 flex justify-end gap-2">
+          <div className="pt-2 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-4">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

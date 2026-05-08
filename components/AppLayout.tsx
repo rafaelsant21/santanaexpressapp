@@ -81,10 +81,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </button>
       </div>
 
-      {/* Sidebar */}
+      {/* Overlay Backdrop - Aparece quando o menu abre no mobile */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity md:hidden" 
+          onClick={() => setMobileMenuOpen(false)} 
+        />
+      )}
+
+      {/* Sidebar / Drawer */}
       <div className={cn(
-        "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:static md:block border-r border-[#1e293b] md:bg-[#111827] w-64 md:w-[240px] transition-all",
-        mobileMenuOpen ? "block" : "hidden"
+        "fixed inset-y-0 left-0 z-50 bg-[#111827] border-r border-[#1e293b] w-64 md:w-[240px] transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:block",
+        mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full bg-[#111827]">
           <div className="flex flex-col p-6 border-b border-[#1e293b] md:border-none md:mb-2">
@@ -147,8 +155,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-        {/* Mobile backdrop click */}
-        <div className="md:hidden absolute inset-0 z-[-1]" onClick={() => setMobileMenuOpen(false)} />
+        {/* Removido o backdrop click antigo pois foi movido para fora da sidebar */}
       </div>
 
       {/* Main Content */}
