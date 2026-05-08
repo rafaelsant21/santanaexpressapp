@@ -154,8 +154,8 @@ export default function ChecklistPage() {
 
       // ── Sincroniza KM do veículo na frota ──────────────────────────────
       const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
-      if (vehicle && formData.km_atual > vehicle.km_atual) {
-        await updateVehicle(vehicle.id, { km_atual: formData.km_atual });
+      if (vehicle && Number(formData.km_atual) > vehicle.km_atual) {
+        await updateVehicle(vehicle.id, { km_atual: Number(formData.km_atual) });
       }
       // ───────────────────────────────────────────────────────────────────
 
