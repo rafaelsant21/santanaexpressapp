@@ -372,21 +372,21 @@ export default function DiarioBordoPage() {
             <div className="grid grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
               <div className="space-y-2">
                 <Label>Data de Saída</Label>
-                <Input type="date" value={formData.data_saida} onChange={e => setFormData({...formData, data_saida: e.target.value})} />
+                <Input type="date" value={formData.data_saida || ''} onChange={e => setFormData({...formData, data_saida: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <Label>Hora de Saída</Label>
-                <Input type="time" value={formData.hora_saida} onChange={e => setFormData({...formData, hora_saida: e.target.value})} />
+                <Input type="time" value={formData.hora_saida || ''} onChange={e => setFormData({...formData, hora_saida: e.target.value})} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg">
               <div className="space-y-2">
                 <Label>Data de Chegada</Label>
-                <Input type="date" value={formData.data_chegada} onChange={e => setFormData({...formData, data_chegada: e.target.value})} />
+                <Input type="date" value={formData.data_chegada || ''} onChange={e => setFormData({...formData, data_chegada: e.target.value})} />
               </div>
               <div className="space-y-2">
                 <Label>Hora de Chegada</Label>
-                <Input type="time" value={formData.hora_chegada} onChange={e => setFormData({...formData, hora_chegada: e.target.value})} />
+                <Input type="time" value={formData.hora_chegada || ''} onChange={e => setFormData({...formData, hora_chegada: e.target.value})} />
               </div>
             </div>
           </div>
