@@ -16,7 +16,7 @@ export default function FrotaPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     placa: '',
     modelo: '',
     marca: '',

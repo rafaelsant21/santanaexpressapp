@@ -21,7 +21,7 @@ export default function ManutencaoPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Maintenance | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     vehicle_id: '',
     motorista: '',
     tipo: 'preventiva' as MaintenanceType,

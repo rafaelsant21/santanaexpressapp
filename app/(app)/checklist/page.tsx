@@ -21,7 +21,7 @@ const DEFAULT_ITENS = {
   documentos_ok: false,
 };
 
-const DEFAULT_FORM = {
+const DEFAULT_FORM: any = {
   vehicle_id: '',
   data: new Date().toISOString().substring(0, 16),
   motorista: '',
@@ -84,7 +84,7 @@ export default function ChecklistPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Checklist | null>(null);
-  const [formData, setFormData] = useState({ ...DEFAULT_FORM });
+  const [formData, setFormData] = useState<any>({ ...DEFAULT_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';

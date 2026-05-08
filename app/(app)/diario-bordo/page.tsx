@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/use-auth';
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_VIAGEM: TipoViagem[] = ['Entrega', 'Coleta', 'Transferência'];
 
-const DEFAULT_FORM: Omit<Logbook, 'id'> = {
+const DEFAULT_FORM: any = {
   vehicle_id: '',
   motorista: '',
   tipo_viagem: 'Entrega',
@@ -39,7 +39,7 @@ export default function DiarioBordoPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Logbook | null>(null);
-  const [formData, setFormData] = useState({ ...DEFAULT_FORM });
+  const [formData, setFormData] = useState<any>({ ...DEFAULT_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { session } = useAuth();

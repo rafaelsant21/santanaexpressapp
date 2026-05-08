@@ -21,7 +21,7 @@ export default function CombustivelPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<FuelLog | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     vehicle_id: '',
     motorista: '',
     data: new Date().toISOString().substring(0, 10),
