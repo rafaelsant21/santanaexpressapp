@@ -207,6 +207,7 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
     macaco_ok: c.itens_check.macaco_ok,
     documentos_ok: c.itens_check.documentos_ok,
     observacoes: c.observacoes,
+    aviso_revisado: c.aviso_revisado ?? false,
   };
 }
 
