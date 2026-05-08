@@ -112,8 +112,8 @@ export default function FrotaPage() {
           <h1 className="text-lg font-semibold tracking-tight">Frota de Veículos</h1>
           <p className="text-xs text-muted-foreground">Gerencie seus veículos e status.</p>
         </div>
-        <div className="grid grid-cols-1 gap-2 w-full md:flex md:w-auto md:items-center">
-          <Button onClick={() => handleOpenModal()} className="w-full">
+        <div className="flex w-full md:w-auto">
+          <Button onClick={() => handleOpenModal()} className="hidden md:flex">
             <Plus className="h-4 w-4 mr-2" />
             Novo Veículo
           </Button>
@@ -269,6 +269,14 @@ export default function FrotaPage() {
         </form>
       </Modal>
       </div>
+
+      {/* Botão Flutuante Mobile (FAB) */}
+      <button
+        onClick={() => handleOpenModal()}
+        className="md:hidden fixed bottom-6 right-6 h-14 w-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-600 active:scale-95 transition-all z-40"
+      >
+        <Plus className="h-7 w-7" />
+      </button>
     </div>
   );
 }

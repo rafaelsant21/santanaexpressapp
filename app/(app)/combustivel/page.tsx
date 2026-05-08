@@ -204,13 +204,13 @@ export default function CombustivelPage() {
               </option>
             ))}
           </select>
-          <div className="grid grid-cols-2 gap-2 md:flex md:w-auto">
-            <Button variant="outline" onClick={exportExcel} className="w-full">
+          <div className="flex w-full md:w-auto gap-2">
+            <Button variant="outline" onClick={exportExcel} className="flex-1 md:flex-none">
               <FileDown className="h-4 w-4 mr-2" />Exportar
             </Button>
-            <Button onClick={() => handleOpenModal()} className="w-full">
+            <Button onClick={() => handleOpenModal()} className="hidden md:flex">
               <Plus className="h-4 w-4 mr-2" />
-              Novo
+              Registrar Abastecimento
             </Button>
           </div>
         </div>
@@ -371,6 +371,14 @@ export default function CombustivelPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Botão Flutuante Mobile (FAB) */}
+      <button
+        onClick={() => handleOpenModal()}
+        className="md:hidden fixed bottom-6 right-6 h-14 w-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-600 active:scale-95 transition-all z-40"
+      >
+        <Plus className="h-7 w-7" />
+      </button>
     </div>
   );
 }
