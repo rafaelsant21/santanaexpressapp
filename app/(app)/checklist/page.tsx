@@ -139,7 +139,11 @@ export default function ChecklistPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const payload = { ...formData, data: new Date(formData.data).toISOString() };
+      const payload: any = { 
+        ...formData, 
+        km_atual: Number(formData.km_atual) || 0,
+        data: new Date(formData.data).toISOString() 
+      };
       if (editingLog) {
         await updateChecklist(editingLog.id, payload);
         toast.success('Checklist atualizado');

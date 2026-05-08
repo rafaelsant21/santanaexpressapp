@@ -102,17 +102,18 @@ export default function ManutencaoPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload: any = {
+        ...formData,
+        custo: Number(formData.custo) || 0,
+        km: Number(formData.km) || 0,
+        data: new Date(formData.data).toISOString()
+      };
+
       if (editingLog) {
-        await updateMaintenance(editingLog.id, {
-          ...formData,
-          data: new Date(formData.data).toISOString()
-        });
+        await updateMaintenance(editingLog.id, payload);
         toast.success('Manutenção atualizada');
       } else {
-        await createMaintenance({
-          ...formData,
-          data: new Date(formData.data).toISOString()
-        });
+        await createMaintenance(payload);
         toast.success('Manutenção agendada/registrada');
       }
       setIsModalOpen(false);

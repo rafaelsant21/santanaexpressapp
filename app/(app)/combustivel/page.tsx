@@ -98,24 +98,26 @@ export default function CombustivelPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload: any = {
+        ...formData,
+        litros: Number(formData.litros) || 0,
+        valor_total: Number(formData.valor_total) || 0,
+        km_no_abastecimento: Number(formData.km_no_abastecimento) || 0,
+        data: new Date(formData.data).toISOString()
+      };
+
       if (editingLog) {
-        await updateFuelLog(editingLog.id, {
-          ...formData,
-          data: new Date(formData.data).toISOString()
-        });
+        await updateFuelLog(editingLog.id, payload);
         toast.success('Registro atualizado');
       } else {
-        await createFuelLog({
-          ...formData,
-          data: new Date(formData.data).toISOString()
-        });
+        await createFuelLog(payload);
         toast.success('Abastecimento registrado');
       }
 
       // ── Sincroniza KM do veículo na frota ──────────────────────────────
       const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
-      if (vehicle && formData.km_no_abastecimento > vehicle.km_atual) {
-        await updateVehicle(vehicle.id, { km_atual: formData.km_no_abastecimento });
+      if (vehicle && Number(formData.km_no_abastecimento) > vehicle.km_atual) {
+        await updateVehicle(vehicle.id, { km_atual: Number(formData.km_no_abastecimento) });
       }
       // ───────────────────────────────────────────────────────────────────
 

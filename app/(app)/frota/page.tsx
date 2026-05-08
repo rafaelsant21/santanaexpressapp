@@ -72,11 +72,17 @@ export default function FrotaPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const payload: any = {
+        ...formData,
+        ano: Number(formData.ano) || 0,
+        km_atual: Number(formData.km_atual) || 0
+      };
+
       if (editingVehicle) {
-        await updateVehicle(editingVehicle.id, formData);
+        await updateVehicle(editingVehicle.id, payload);
         toast.success('Veículo atualizado com sucesso');
       } else {
-        await createVehicle(formData);
+        await createVehicle(payload);
         toast.success('Veículo adicionado com sucesso');
       }
       setIsModalOpen(false);

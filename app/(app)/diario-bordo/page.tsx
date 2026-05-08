@@ -105,8 +105,12 @@ export default function DiarioBordoPage() {
     }
 
     try {
-      const payload = {
+      const payload: any = {
         ...formData,
+        km_inicial: Number(formData.km_inicial) || 0,
+        km_final: Number(formData.km_final) || 0,
+        valor_abastecido: Number(formData.valor_abastecido) || 0,
+        litros_abastecidos: Number(formData.litros_abastecidos) || 0,
         data_saida: formData.data_saida || null,
         hora_saida: formData.hora_saida || null,
         data_chegada: formData.data_chegada || null,
