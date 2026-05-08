@@ -216,7 +216,7 @@ export default function CombustivelPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 space-y-6">
         <Card className="p-0 bg-[#1e293b] rounded-xl border-border overflow-hidden">
           <div className="overflow-x-auto w-full">
             <table className="w-full text-sm text-left min-w-[700px]">
@@ -362,7 +362,7 @@ export default function CombustivelPage() {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-2">
+          <div className="flex justify-end gap-2 sticky bottom-0 z-10 bg-card py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

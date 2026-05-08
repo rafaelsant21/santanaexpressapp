@@ -20,7 +20,7 @@ export function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, o
         className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
         onClick={onClose}
       />
-      <div className="relative z-50 w-full sm:max-w-lg h-[100dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col sm:rounded-xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+      <div className="relative z-50 w-full sm:max-w-lg h-full max-h-full sm:h-auto sm:max-h-[90dvh] flex flex-col sm:rounded-xl border border-border bg-card shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
         <div className="flex shrink-0 items-center justify-between border-b border-border/50 p-4 sm:p-6">
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           <button 
@@ -30,7 +30,7 @@ export function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, o
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="overflow-y-auto p-4 sm:p-6">
+        <div className="overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           {children}
         </div>
       </div>

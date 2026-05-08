@@ -207,7 +207,7 @@ export default function DiarioBordoPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 space-y-6">
         {/* Dashboard Rápido */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
@@ -327,7 +327,7 @@ export default function DiarioBordoPage() {
         onClose={() => setIsModalOpen(false)} 
         title={editingLog ? 'Editar Diário de Bordo' : 'Novo Diário de Bordo'}
       >
-        <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto overflow-x-hidden pr-2">
           
           {/* SEÇÃO 1: Info Viagem */}
           <div className="space-y-4">
@@ -435,7 +435,7 @@ export default function DiarioBordoPage() {
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-2 sticky bottom-0 bg-card py-3 border-t border-border mt-6">
+          <div className="flex justify-end gap-2 sticky bottom-0 z-10 bg-card py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

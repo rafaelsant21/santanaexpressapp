@@ -80,7 +80,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-6 space-y-6">
 
         {/* ── Avisos de Checklist ─────────────────────────────────────────── */}
         {avisosPendentes.length > 0 && (
