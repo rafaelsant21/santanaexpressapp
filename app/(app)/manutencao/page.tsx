@@ -1,0 +1,393 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
+import { Card, Modal } from '@/components/ui/modal';
+import { Button, Input, Select, Label } from '@/components/ui/forms';
+import { Wrench, Plus, Edit, Trash2, CheckSquare, Loader2, FileDown } from 'lucide-react';
+import { getVehicles, getMaintenances, createMaintenance, updateMaintenance, deleteMaintenance } from '@/services/supabaseService';
+import { Vehicle, Maintenance, MaintenanceStatus, MaintenanceType } from '@/services/types';
+import { exportToExcel } from '@/lib/exportExcel';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
+
+const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
+
+export default function ManutencaoPage() {
+  const [logs, setLogs] = useState<Maintenance[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<Maintenance | null>(null);
+  
+  const [formData, setFormData] = useState({
+    vehicle_id: '',
+    motorista: '',
+    tipo: 'preventiva' as MaintenanceType,
+    descricao: '',
+    custo: 0,
+    data: new Date().toISOString().substring(0, 10),
+    km: 0,
+    status: 'pendente' as MaintenanceStatus
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { session } = useAuth();
+  const isAdmin = session?.role === 'admin';
+
+  // Filtro de mês — padrão: mês atual
+  const [mesFilter, setMesFilter] = useState<string>(
+    () => new Date().toISOString().substring(0, 7)
+  );
+
+  const mesesDisponiveis = useMemo(() => {
+    const set = new Set(logs.map(l => l.data.substring(0, 7)));
+    return Array.from(set).sort().reverse();
+  }, [logs]);
+
+  const filteredLogs = useMemo(() => {
+    if (!mesFilter) return logs;
+    return logs.filter(l => l.data.substring(0, 7) === mesFilter);
+  }, [logs, mesFilter]);
+
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [mData, vData] = await Promise.all([getMaintenances(), getVehicles()]);
+      setLogs(mData);
+      setVehicles(vData);
+    } catch (error) {
+      toast.error('Erro ao carregar dados');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleOpenModal = (log?: Maintenance) => {
+    if (log) {
+      setEditingLog(log);
+      setFormData({
+        vehicle_id: log.vehicle_id,
+        motorista: log.motorista,
+        tipo: log.tipo,
+        descricao: log.descricao,
+        custo: log.custo,
+        data: new Date(log.data).toISOString().substring(0, 10),
+        km: log.km,
+        status: log.status
+      });
+    } else {
+      setEditingLog(null);
+      setFormData({
+        vehicle_id: vehicles[0]?.id || '',
+        motorista: '',
+        tipo: 'preventiva',
+        descricao: '',
+        custo: 0,
+        data: new Date().toISOString().substring(0, 10),
+        km: 0,
+        status: 'pendente'
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (editingLog) {
+        await updateMaintenance(editingLog.id, {
+          ...formData,
+          data: new Date(formData.data).toISOString()
+        });
+        toast.success('Manutenção atualizada');
+      } else {
+        await createMaintenance({
+          ...formData,
+          data: new Date(formData.data).toISOString()
+        });
+        toast.success('Manutenção agendada/registrada');
+      }
+      setIsModalOpen(false);
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao salvar manutenção');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este registro?')) return;
+    try {
+      await deleteMaintenance(id);
+      toast.success('Registro excluído');
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao excluir registro');
+    }
+  };
+
+  const handleToggleStatus = async (log: Maintenance) => {
+    try {
+      const newStatus = log.status === 'pendente' ? 'concluída' : 'pendente';
+      await updateMaintenance(log.id, { status: newStatus });
+      toast.success(`Marcado como ${newStatus}`);
+      loadData();
+    } catch (error) {
+      toast.error('Erro ao atualizar status');
+    }
+  };
+
+  const exportExcel = () => {
+    if (filteredLogs.length === 0) { toast.error('Nenhum dado para exportar'); return; }
+    const rows = filteredLogs.map(log => {
+      const vehicle = vehicles.find(v => v.id === log.vehicle_id);
+      return {
+        'Data': format(new Date(log.data), 'dd/MM/yyyy'),
+        'Veículo (Placa)': vehicle?.placa ?? '',
+        'Veículo (Modelo)': vehicle ? `${vehicle.marca} ${vehicle.modelo}` : '',
+        'Motorista': log.motorista,
+        'Descrição': log.descricao,
+        'Tipo': log.tipo,
+        'KM': log.km,
+        'Custo (R$)': log.custo,
+        'Status': log.status,
+      };
+    });
+    const label = mesFilter || 'todos';
+    exportToExcel(rows, `manutencoes_${label}`, 'Manutencoes');
+    toast.success('Exportado com sucesso!');
+  };
+
+  return (
+    <div className="flex flex-col min-h-0 bg-background h-full">
+      <header className="h-16 border-b border-border bg-[#0f172b] flex items-center justify-between px-8 shrink-0">
+        <div>
+          <h1 className="text-lg font-semibold tracking-tight">Manutenção</h1>
+          <p className="text-xs text-muted-foreground">Controle preventivo e corretivo.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={mesFilter}
+            onChange={e => setMesFilter(e.target.value)}
+            className="h-8 rounded-md border border-border bg-[#1e293b] px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="">Todos os meses</option>
+            {mesesDisponiveis.map(m => (
+              <option key={m} value={m}>
+                {new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
+          <Button variant="outline" onClick={exportExcel} className="h-8 text-sm">
+            <FileDown className="h-4 w-4 mr-2" />Exportar
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova Manutenção
+          </Button>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+        <Card className="p-0 bg-[#1e293b] rounded-xl border-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-[#111827]">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Data</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Veículo</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Motorista</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Descrição</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Custo</th>
+                  <th className="text-left px-4 py-3 text-xs text-muted-foreground font-medium">Status</th>
+                  <th className="text-right px-4 py-3 text-xs text-muted-foreground font-medium">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </td>
+                  </tr>
+                ) : filteredLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground border-b border-border">
+                      Nenhum registro encontrado.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLogs.map((log) => {
+                    const vehicle = vehicles.find(v => v.id === log.vehicle_id);
+                    return (
+                      <tr key={log.id}>
+                        <td className="px-4 py-3 text-[13px] border-b border-border font-medium">
+                          {format(new Date(log.data), "dd/MM/yyyy")}
+                        </td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{vehicle ? `${vehicle.placa} - ${vehicle.modelo}` : 'Desconhecido'}</td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{log.motorista || '—'}</td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border">
+                          <div className="font-medium text-foreground">{log.descricao}</div>
+                          <div className="text-xs text-muted-foreground">{log.tipo} • KM: {log.km.toLocaleString()}</div>
+                        </td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">R$ {log.custo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                            log.status === 'concluída' ? 'bg-success/20 text-[#86efac]' : 'bg-danger/20 text-[#fca5a5]'
+                          }`}>
+                            {log.status === 'concluída' ? 'Concluída' : 'Pendente'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border text-right">
+                          <div className="flex justify-end gap-2">
+                            {isAdmin && (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  title="Alternar Status"
+                                  onClick={() => handleToggleStatus(log)}
+                                  className={log.status === 'pendente' ? "text-success hover:text-success hover:bg-success/10" : ""}
+                                >
+                                  <CheckSquare className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={editingLog ? 'Editar Manutenção' : 'Nova Manutenção'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Veículo</Label>
+            <Select 
+              required
+              value={formData.vehicle_id} 
+              onChange={e => setFormData({...formData, vehicle_id: e.target.value})}
+            >
+              <option value="" disabled>Selecione um veículo</option>
+              {vehicles.map(v => (
+                <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Motorista Responsável</Label>
+            <Select
+              required
+              value={formData.motorista}
+              onChange={e => setFormData({...formData, motorista: e.target.value})}
+            >
+              <option value="" disabled>Selecione o motorista</option>
+              {MOTORISTAS.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Data (Agendada/Realizada)</Label>
+              <Input 
+                required 
+                type="date"
+                value={formData.data} 
+                onChange={e => setFormData({...formData, data: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>KM do Serviço</Label>
+              <Input 
+                required 
+                type="number"
+                min="0"
+                value={formData.km} 
+                onChange={e => setFormData({...formData, km: parseInt(e.target.value) || 0})}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Descrição do Serviço</Label>
+            <Input 
+              required 
+              placeholder="Ex: Troca de óleo, Reparo de freio..."
+              value={formData.descricao} 
+              onChange={e => setFormData({...formData, descricao: e.target.value})}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Tipo</Label>
+              <Select 
+                value={formData.tipo} 
+                onChange={e => setFormData({...formData, tipo: e.target.value as MaintenanceType})}
+              >
+                <option value="preventiva">Preventiva</option>
+                <option value="corretiva">Corretiva</option>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Custo (R$)</Label>
+              <Input 
+                required 
+                type="number"
+                min="0" step="0.01"
+                value={formData.custo} 
+                onChange={e => setFormData({...formData, custo: parseFloat(e.target.value) || 0})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select 
+                value={formData.status} 
+                onChange={e => setFormData({...formData, status: e.target.value as MaintenanceStatus})}
+              >
+                <option value="pendente">Pendente</option>
+                <option value="concluída">Concluída</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Salvar
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
