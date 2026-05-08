@@ -69,7 +69,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="h-[100dvh] w-full overflow-hidden bg-background flex flex-col md:flex-row">
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
