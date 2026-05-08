@@ -188,13 +188,13 @@ export default function ChecklistPage() {
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
-      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between px-4 py-4 md:px-8 md:h-16 shrink-0 gap-4">
+      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 md:h-16 shrink-0 gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Checklist de Viagens</h1>
           <p className="text-xs text-muted-foreground">Inspeção pré-viagem obrigatória.</p>
         </div>
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
-          <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
+        <div className="grid grid-cols-1 gap-2 w-full md:flex md:w-auto md:items-center">
+          <Button onClick={() => handleOpenModal()} className="w-full">
             <Plus className="h-4 w-4 mr-2" />Novo Checklist
           </Button>
         </div>

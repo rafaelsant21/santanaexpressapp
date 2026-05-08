@@ -191,18 +191,18 @@ export default function DiarioBordoPage() {
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
-      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between px-4 py-4 md:px-8 md:h-16 shrink-0 gap-4">
+      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 md:h-16 shrink-0 gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Diário de Bordo</h1>
           <p className="text-xs text-muted-foreground">Histórico detalhado das viagens operacionais.</p>
         </div>
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
-          <Button variant="outline" onClick={exportExcel} className="h-8 text-sm">
+        <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto md:items-center">
+          <Button variant="outline" onClick={exportExcel} className="w-full">
             <FileDown className="h-4 w-4 mr-2" />Exportar
           </Button>
-          <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
+          <Button onClick={() => handleOpenModal()} className="w-full">
             <Plus className="h-4 w-4 mr-2" />
-            Novo Registro
+            Novo
           </Button>
         </div>
       </header>

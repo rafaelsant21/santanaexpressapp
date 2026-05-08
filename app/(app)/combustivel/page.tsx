@@ -185,17 +185,17 @@ export default function CombustivelPage() {
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
-      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between px-4 py-4 md:px-8 md:h-16 shrink-0 gap-4">
+      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 md:h-16 shrink-0 gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Controle de Combustível</h1>
           <p className="text-xs text-muted-foreground">Registre os abastecimentos da frota.</p>
         </div>
-        <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
           {/* Filtro de mês */}
           <select
             value={mesFilter}
             onChange={e => setMesFilter(e.target.value)}
-            className="h-8 rounded-md border border-border bg-[#1e293b] px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-11 md:h-9 rounded-md border border-border bg-[#1e293b] px-3 text-[16px] md:text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-full md:w-auto"
           >
             <option value="">Todos os meses</option>
             {mesesDisponiveis.map(m => (
@@ -204,13 +204,15 @@ export default function CombustivelPage() {
               </option>
             ))}
           </select>
-          <Button variant="outline" onClick={exportExcel} className="h-8 text-sm">
-            <FileDown className="h-4 w-4 mr-2" />Exportar
-          </Button>
-          <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Registrar Abastecimento
-          </Button>
+          <div className="grid grid-cols-2 gap-2 md:flex md:w-auto">
+            <Button variant="outline" onClick={exportExcel} className="w-full">
+              <FileDown className="h-4 w-4 mr-2" />Exportar
+            </Button>
+            <Button onClick={() => handleOpenModal()} className="w-full">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo
+            </Button>
+          </div>
         </div>
       </header>
 
