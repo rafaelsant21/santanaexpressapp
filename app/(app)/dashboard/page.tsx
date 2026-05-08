@@ -73,7 +73,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-0 h-full bg-background">
       {/* Header */}
-      <header className="h-16 border-b border-border bg-[#0f172b] flex items-center px-8 shrink-0">
+      <header className="border-b border-border bg-[#0f172b] flex flex-col justify-center px-4 py-4 md:px-8 md:h-16 shrink-0 gap-1">
         <div>
           <h1 className="text-base font-semibold tracking-tight">Visão Geral</h1>
           <p className="text-xs text-muted-foreground">Painel de controle operacional</p>

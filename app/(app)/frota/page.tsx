@@ -107,15 +107,17 @@ export default function FrotaPage() {
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
-      <header className="h-16 border-b border-border bg-[#0f172b] flex items-center justify-between px-8 shrink-0">
+      <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between px-4 py-4 md:px-8 md:h-16 shrink-0 gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Frota de Veículos</h1>
           <p className="text-xs text-muted-foreground">Gerencie seus veículos e status.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Veículo
-        </Button>
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
+          <Button onClick={() => handleOpenModal()} className="h-8 text-sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Veículo
+          </Button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
