@@ -85,12 +85,19 @@ export default function DiarioBordoPage() {
 
   // Timer for selected active trip
   const activeLog = selectedLog?.status === 'Em andamento' ? selectedLog : null;
+  // Build departure timestamp: prefer data_saida+hora_saida, fall back to created_at
+  const horaSaidaStr = activeLog
+    ? (activeLog.data_saida && activeLog.hora_saida
+        ? `${activeLog.data_saida}T${activeLog.hora_saida}`
+        : null)
+    : null;
   const timer = useTripTimer(
-    activeLog ? (activeLog.data_saida && activeLog.hora_saida ? `${activeLog.data_saida}T${activeLog.hora_saida}` : null) : null,
+    horaSaidaStr,
     activeLog?.status ?? '',
     tripEvents,
     activeLog?.em_pausa ?? false,
     activeLog?.aguardando_descarga ?? false,
+    activeLog?.created_at ?? null,
   );
 
   // Monitor all active trips for rest alerts

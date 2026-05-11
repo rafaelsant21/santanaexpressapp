@@ -90,6 +90,7 @@ export interface Logbook {
   em_pausa?: boolean;
   aguardando_descarga?: boolean;
   notificacao_enviada?: boolean;
+  created_at?: string;
 }
 
 // ─── EVENTOS DE VIAGEM ───────────────────────────────────────────────────────
