@@ -87,6 +87,29 @@ export interface Logbook {
   ocorrencias: string;
   status: 'Em andamento' | 'Finalizada' | 'Cancelada';
   comprovante_url?: string;
+  em_pausa?: boolean;
+  aguardando_descarga?: boolean;
+  notificacao_enviada?: boolean;
+}
+
+// ─── EVENTOS DE VIAGEM ───────────────────────────────────────────────────────
+
+export type TripEventType =
+  | 'pausa_inicio'
+  | 'pausa_fim'
+  | 'espera_inicio'
+  | 'espera_fim'
+  | 'viagem_inicio'
+  | 'viagem_fim';
+
+export interface TripEvent {
+  id: string;
+  logbook_id: string;
+  tipo: TripEventType;
+  timestamp: string;
+  local?: string;
+  observacoes?: string;
+  created_at?: string;
 }
 
 export type UserRole = 'admin' | 'driver';

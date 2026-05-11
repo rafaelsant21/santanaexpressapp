@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon } from 'lucide-react';
-import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook } from '@/services/supabaseService';
-import { Vehicle, Logbook, TipoViagem } from '@/services/types';
+import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon, Bell } from 'lucide-react';
+import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook, getTripEvents, createTripEvent } from '@/services/supabaseService';
+import { Vehicle, Logbook, TipoViagem, TripEvent } from '@/services/types';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { TripTimer } from '@/components/diario-bordo/TripTimer';
+import { TripControls } from '@/components/diario-bordo/TripControls';
+import { TripTimeline } from '@/components/diario-bordo/TripTimeline';
+import { RestAlert } from '@/components/diario-bordo/RestAlert';
+import { useTripTimer } from '@/hooks/use-trip-timer';
+import { useTripNotifications } from '@/hooks/use-trip-notifications';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_VIAGEM: TipoViagem[] = ['Entrega', 'Coleta', 'Transferência'];
@@ -35,6 +41,29 @@ const DEFAULT_FORM: any = {
   comprovante_url: '',
 };
 
+// Badge de status para viagem ativa na tabela
+function ActiveTripBadge({ log }: { log: Logbook }) {
+  if (log.em_pausa) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-400">
+        ⏸ Em Pausa
+      </span>
+    );
+  }
+  if (log.aguardando_descarga) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-500/10 border border-orange-500/20 text-orange-400">
+        📦 Aguard. Descarga
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 border border-green-500/20 text-green-400">
+      🚛 Dirigindo
+    </span>
+  );
+}
+
 export default function DiarioBordoPage() {
   const [logs, setLogs] = useState<Logbook[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -43,9 +72,91 @@ export default function DiarioBordoPage() {
   const [editingLog, setEditingLog] = useState<Logbook | null>(null);
   const [formData, setFormData] = useState<any>({ ...DEFAULT_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Trip control state
+  const [selectedLog, setSelectedLog] = useState<Logbook | null>(null);
+  const [tripEvents, setTripEvents] = useState<TripEvent[]>([]);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [alertDismissed, setAlertDismissed] = useState<Record<string, boolean>>({});
+  const notifSentRef = useRef<Record<string, boolean>>({});
 
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
+  const { requestPermission, sendRestAlert } = useTripNotifications();
+
+  // Timer for selected active trip
+  const activeLog = selectedLog?.status === 'Em andamento' ? selectedLog : null;
+  const timer = useTripTimer(
+    activeLog ? (activeLog.data_saida && activeLog.hora_saida ? `${activeLog.data_saida}T${activeLog.hora_saida}` : null) : null,
+    activeLog?.status ?? '',
+    tripEvents,
+    activeLog?.em_pausa ?? false,
+    activeLog?.aguardando_descarga ?? false,
+  );
+
+  // Monitor all active trips for rest alerts
+  useEffect(() => {
+    if (!activeLog) return;
+    if (timer.nivelAlerta === 'critico' && !notifSentRef.current[activeLog.id] && !activeLog.notificacao_enviada) {
+      notifSentRef.current[activeLog.id] = true;
+      sendRestAlert();
+      updateLogbook(activeLog.id, { notificacao_enviada: true }).catch(() => {});
+    }
+  }, [timer.nivelAlerta, activeLog?.id]);
+
+  const loadTripEvents = async (logId: string) => {
+    try {
+      const evs = await getTripEvents(logId);
+      setTripEvents(evs);
+    } catch { setTripEvents([]); }
+  };
+
+  const openDetail = (log: Logbook) => {
+    setSelectedLog(log);
+    setIsDetailOpen(true);
+    loadTripEvents(log.id);
+    if (log.status === 'Em andamento') requestPermission();
+  };
+
+  const handleIniciarPausa = async () => {
+    if (!selectedLog) return;
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_inicio', timestamp: new Date().toISOString() });
+    const updated = await updateLogbook(selectedLog.id, { em_pausa: true });
+    setSelectedLog(updated);
+    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+    await loadTripEvents(selectedLog.id);
+    toast.success('Parada registrada!');
+  };
+
+  const handleRetomarViagem = async () => {
+    if (!selectedLog) return;
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_fim', timestamp: new Date().toISOString() });
+    const updated = await updateLogbook(selectedLog.id, { em_pausa: false, notificacao_enviada: false });
+    notifSentRef.current[selectedLog.id] = false;
+    setSelectedLog(updated);
+    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+    await loadTripEvents(selectedLog.id);
+    toast.success('Viagem retomada!');
+  };
+
+  const handleIniciarEspera = async (local?: string) => {
+    if (!selectedLog) return;
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_inicio', timestamp: new Date().toISOString(), local });
+    const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: true });
+    setSelectedLog(updated);
+    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+    await loadTripEvents(selectedLog.id);
+    toast.success('Espera registrada!');
+  };
+
+  const handleFinalizarEspera = async () => {
+    if (!selectedLog) return;
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_fim', timestamp: new Date().toISOString() });
+    const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: false });
+    setSelectedLog(updated);
+    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+    await loadTripEvents(selectedLog.id);
+    toast.success('Descarga finalizada!');
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -179,17 +290,18 @@ export default function DiarioBordoPage() {
   // Dashboard Stats
   const totalViagens = logs.length;
   const emAndamento = logs.filter(l => l.status === 'Em andamento').length;
+  const aguardandoDescarga = logs.filter(l => l.aguardando_descarga).length;
   const kmMes = logs
     .filter(l => l.data_saida && new Date(l.data_saida).getMonth() === new Date().getMonth())
     .reduce((acc, log) => acc + Math.max(0, log.km_final - log.km_inicial), 0);
 
-  const StatusIcon = {
+  const StatusIcon: Record<string, any> = {
     'Finalizada': CheckCircle2,
     'Em andamento': Clock,
     'Cancelada': XCircle,
   };
 
-  const StatusColors = {
+  const StatusColors: Record<string, string> = {
     'Finalizada': 'bg-green-500/10 text-green-400 border-green-500/20',
     'Em andamento': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
     'Cancelada': 'bg-red-500/10 text-red-400 border-red-500/20',
@@ -215,32 +327,41 @@ export default function DiarioBordoPage() {
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 space-y-6">
         {/* Dashboard Rápido */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Route className="h-6 w-6 text-blue-400" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Route className="h-5 w-5 text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total de Viagens</p>
-              <h3 className="text-2xl font-bold">{totalViagens}</h3>
+              <p className="text-xs font-medium text-muted-foreground">Total</p>
+              <h3 className="text-xl font-bold">{totalViagens}</h3>
             </div>
           </Card>
-          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <MapPin className="h-6 w-6 text-green-400" />
+          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+              <Clock className="h-5 w-5 text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">KM no Mês</p>
-              <h3 className="text-2xl font-bold">{kmMes.toLocaleString()} km</h3>
+              <p className="text-xs font-medium text-muted-foreground">Em Andamento</p>
+              <h3 className="text-xl font-bold">{emAndamento}</h3>
             </div>
           </Card>
-          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-              <Clock className="h-6 w-6 text-yellow-400" />
+          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+              <BookOpen className="h-5 w-5 text-orange-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Em Andamento</p>
-              <h3 className="text-2xl font-bold">{emAndamento}</h3>
+              <p className="text-xs font-medium text-muted-foreground">Aguard. Descarga</p>
+              <h3 className="text-xl font-bold">{aguardandoDescarga}</h3>
+            </div>
+          </Card>
+          <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+              <MapPin className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">KM no Mês</p>
+              <h3 className="text-xl font-bold">{(kmMes/1000).toFixed(1)}k</h3>
             </div>
           </Card>
         </div>
@@ -254,7 +375,7 @@ export default function DiarioBordoPage() {
                   <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Motorista/Veículo</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Rota</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Distância</th>
-                  <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Status</th>
+                  <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Status / Tempo</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground font-medium text-right">Ações</th>
                 </tr>
               </thead>
@@ -297,33 +418,33 @@ export default function DiarioBordoPage() {
                           {log.km_final > 0 ? `${dist} km` : '—'}
                         </td>
                         <td className="px-4 py-3 text-[13px] border-b border-border">
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold ${StatusColors[log.status]}`}>
-                            <SIcon className="h-3 w-3" />
-                            {log.status}
+                          <div className="flex flex-col gap-1.5">
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold w-fit ${StatusColors[log.status]}`}>
+                              <SIcon className="h-3 w-3" />
+                              {log.status}
+                            </div>
+                            {log.status === 'Em andamento' && (
+                              <ActiveTripBadge log={log} />
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-right">
                           <div className="flex justify-end gap-1">
+                            {log.status === 'Em andamento' && (
+                              <Button variant="ghost" size="icon" onClick={() => openDetail(log)} title="Controles da Viagem" className="text-primary hover:bg-primary/10">
+                                <Bell className="h-4 w-4" />
+                              </Button>
+                            )}
                             {log.comprovante_url && (
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => window.open(log.comprovante_url, '_blank')}
-                                title="Ver Anexo"
-                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
-                              >
+                              <Button variant="ghost" size="icon" onClick={() => window.open(log.comprovante_url, '_blank')} title="Ver Anexo" className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10">
                                 <ImageIcon className="h-4 w-4" />
                               </Button>
                             )}
                             {(isAdmin || log.status === 'Em andamento') && (
                               <>
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}><Edit className="h-4 w-4" /></Button>
                                 {isAdmin && (
-                                  <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
                                 )}
                               </>
                             )}
@@ -338,6 +459,48 @@ export default function DiarioBordoPage() {
           </div>
         </Card>
       </div>
+
+      {/* Rest Alert global */}
+      <RestAlert
+        visible={!!(activeLog && timer.nivelAlerta === 'critico' && !alertDismissed[activeLog.id])}
+        tempoStr={timer.tempoLiquidoStr}
+        onIniciarPausa={() => { handleIniciarPausa(); setAlertDismissed(prev => ({ ...prev, [activeLog!.id]: true })); }}
+        onDismiss={() => activeLog && setAlertDismissed(prev => ({ ...prev, [activeLog.id]: true }))}
+      />
+
+      {/* Detail Modal — Controles da Viagem */}
+      <Modal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} title={`Controles — ${selectedLog?.motorista ?? ''}`}>
+        <div className="space-y-5">
+          {selectedLog && (
+            <>
+              <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-xl">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Tempo em direção</p>
+                  <p className="text-lg font-bold">{timer.tempoLiquidoStr}</p>
+                </div>
+                {timer.nivelAlerta === 'critico' && <span className="ml-auto text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full animate-pulse">PAUSA NECESSÁRIA</span>}
+                {timer.nivelAlerta === 'aviso' && <span className="ml-auto text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded-full">{timer.minutosParaAlerta}min p/ alerta</span>}
+              </div>
+              <TripControls
+                logbookId={selectedLog.id}
+                emPausa={selectedLog.em_pausa ?? false}
+                aguardandoDescarga={selectedLog.aguardando_descarga ?? false}
+                onIniciarPausa={handleIniciarPausa}
+                onRetomarViagem={handleRetomarViagem}
+                onIniciarEspera={handleIniciarEspera}
+                onFinalizarEspera={handleFinalizarEspera}
+              />
+              <TripTimeline
+                events={tripEvents}
+                horaSaida={selectedLog.data_saida && selectedLog.hora_saida ? `${selectedLog.data_saida}T${selectedLog.hora_saida}` : null}
+                horaChegada={selectedLog.data_chegada && selectedLog.hora_chegada ? `${selectedLog.data_chegada}T${selectedLog.hora_chegada}` : null}
+                status={selectedLog.status}
+              />
+            </>
+          )}
+        </div>
+      </Modal>
 
       <Modal 
         isOpen={isModalOpen} 

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense } from './types';
+import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent } from './types';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -367,3 +367,31 @@ export const deleteExpense = async (id: string): Promise<void> => {
   if (error) handleError(error, 'deleteExpense');
 };
 
+// ─── EVENTOS DE VIAGEM (PAUSAS / ESPERAS) ────────────────────────────────────
+
+export const getTripEvents = async (logbook_id: string): Promise<TripEvent[]> => {
+  const { data, error } = await supabase
+    .from('trip_events')
+    .select('*')
+    .eq('logbook_id', logbook_id)
+    .order('timestamp', { ascending: true });
+
+  if (error) handleError(error, 'getTripEvents');
+  return (data ?? []) as TripEvent[];
+};
+
+export const createTripEvent = async (event: Omit<TripEvent, 'id' | 'created_at'>): Promise<TripEvent> => {
+  const { data, error } = await supabase
+    .from('trip_events')
+    .insert([event])
+    .select()
+    .single();
+
+  if (error) handleError(error, 'createTripEvent');
+  return data as TripEvent;
+};
+
+export const deleteTripEvent = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('trip_events').delete().eq('id', id);
+  if (error) handleError(error, 'deleteTripEvent');
+};
