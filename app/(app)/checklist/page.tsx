@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText } from 'lucide-react';
+import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
 import { getVehicles, getChecklists, createChecklist, updateChecklist, deleteChecklist, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, Checklist, TipoViagem } from '@/services/types';
+import { FileUpload } from '@/components/ui/FileUpload';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,6 +30,7 @@ interface ChecklistFormData {
   tipo_viagem: TipoViagem;
   itens_check: typeof DEFAULT_ITENS;
   observacoes: string;
+  comprovante_url?: string;
 }
 
 const DEFAULT_FORM: ChecklistFormData = {
@@ -39,6 +41,7 @@ const DEFAULT_FORM: ChecklistFormData = {
   tipo_viagem: 'Entrega',
   itens_check: { ...DEFAULT_ITENS },
   observacoes: '',
+  comprovante_url: '',
 };
 
 // ─── Grupos de checkboxes ────────────────────────────────────────────────────
@@ -125,6 +128,7 @@ export default function ChecklistPage() {
         tipo_viagem: log.tipo_viagem,
         itens_check: { ...log.itens_check },
         observacoes: log.observacoes,
+        comprovante_url: log.comprovante_url,
       });
     } else {
       setEditingLog(null);
@@ -275,6 +279,17 @@ export default function ChecklistPage() {
                       </td>
                       <td className="px-4 py-3 border-b border-border text-right">
                         <div className="flex justify-end gap-1">
+                          {log.comprovante_url && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => window.open(log.comprovante_url, '_blank')}
+                              title="Ver Foto/Anexo"
+                              className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                            >
+                              <ImageIcon className="h-4 w-4" />
+                            </Button>
+                          )}
                           {isAdmin && (
                             <>
                               <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}><Edit className="h-4 w-4" /></Button>
@@ -405,6 +420,13 @@ export default function ChecklistPage() {
               </div>
             );
           })()}
+
+          <FileUpload 
+            bucket="checklists"
+            label="Foto do Veículo / Problema (Opcional)"
+            value={formData.comprovante_url}
+            onChange={(url) => setFormData({ ...formData, comprovante_url: url })}
+          />
 
           <div className="flex justify-end gap-2 sticky bottom-0 z-10 bg-card py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

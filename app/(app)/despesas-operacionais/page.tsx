@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { getVehicles, getExpenses, createExpense, updateExpense, deleteExpense } from '@/services/supabaseService';
 import { Vehicle, Expense, ExpenseType, PaymentMethod, ExpenseStatus } from '@/services/types';
+import { FileUpload } from '@/components/ui/FileUpload';
 import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -393,6 +394,17 @@ export default function DespesasOperacionaisPage() {
                         </td>
                         <td className="px-4 py-4 text-right">
                           <div className="flex justify-end gap-1">
+                            {exp.comprovante_url && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => window.open(exp.comprovante_url, '_blank')}
+                                title="Visualizar Comprovante"
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => handleOpenModal(exp)}><Edit className="h-4 w-4" /></Button>
                             {isAdmin && (
                               <Button variant="ghost" size="icon" onClick={() => handleDelete(exp.id)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
@@ -499,66 +511,26 @@ export default function DespesasOperacionaisPage() {
           </div>
 
           {/* Sessão 4: Comprovante e Obs */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80 flex items-center gap-2">
-              <ImageIcon className="h-4 w-4" /> Comprovante & Observações
-            </h3>
-            <div className="space-y-2">
-              <Label>Descrição / Motivo</Label>
-              <textarea 
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]"
-                placeholder="Detalhes adicionais sobre a despesa..."
-                value={formData.observacoes}
-                onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80 flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" /> Comprovante & Observações
+              </h3>
+              <div className="space-y-2">
+                <Label>Descrição / Motivo</Label>
+                <textarea 
+                  className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[80px]"
+                  placeholder="Detalhes adicionais sobre a despesa..."
+                  value={formData.observacoes}
+                  onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                />
+              </div>
+              <FileUpload 
+                bucket="despesas"
+                label="Foto do Recibo / Nota Fiscal"
+                value={formData.comprovante_url}
+                onChange={(url) => setFormData({ ...formData, comprovante_url: url })}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Comprovante</Label>
-              <div className="flex flex-col gap-2">
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  className="hidden" 
-                  id="receipt-upload" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setFormData({ ...formData, comprovante_url: reader.result as string });
-                        toast.success('Foto anexada com sucesso!');
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                <div 
-                  onClick={() => document.getElementById('receipt-upload')?.click()}
-                  className="w-full h-40 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:bg-primary/5 hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden"
-                >
-                  {formData.comprovante_url ? (
-                    <>
-                      <img src={formData.comprovante_url} alt="Comprovante" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                      <div className="relative z-10 flex flex-col items-center bg-black/60 p-3 rounded-lg backdrop-blur-sm border border-white/10">
-                        <CheckCircle2 className="h-6 w-6 mb-1 text-green-400" />
-                        <span className="text-[10px] font-bold text-white uppercase">Foto Anexada</span>
-                        <span className="text-[9px] text-white/70">Clique para trocar</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-3 bg-white/5 rounded-full mb-3">
-                        <ImageIcon className="h-6 w-6" />
-                      </div>
-                      <span className="text-xs font-medium">Anexar foto do recibo</span>
-                      <span className="text-[10px] text-muted-foreground mt-1 px-4 text-center">Toque para abrir a câmera ou galeria</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Status (Apenas Admin) */}
           {isAdmin && (

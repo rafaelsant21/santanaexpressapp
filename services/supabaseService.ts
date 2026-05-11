@@ -8,6 +8,21 @@ function handleError(error: unknown, context: string): never {
   throw new Error(`[supabaseService] ${context}: ${message}`);
 }
 
+export const uploadFile = async (bucket: string, file: File): Promise<string> => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, file);
+
+  if (uploadError) handleError(uploadError, `uploadFile (${bucket})`);
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  return data.publicUrl;
+};
+
 // ─── VEÍCULOS ────────────────────────────────────────────────────────────────
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
@@ -156,6 +171,7 @@ type ChecklistRow = {
   documentos_ok: boolean;
   observacoes: string;
   aviso_revisado: boolean;
+  comprovante_url?: string;
 };
 
 function rowToChecklist(row: ChecklistRow): Checklist {
@@ -183,6 +199,7 @@ function rowToChecklist(row: ChecklistRow): Checklist {
     },
     observacoes: row.observacoes,
     aviso_revisado: row.aviso_revisado,
+    comprovante_url: row.comprovante_url,
   };
 }
 
@@ -208,6 +225,7 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
     documentos_ok: c.itens_check.documentos_ok,
     observacoes: c.observacoes,
     aviso_revisado: c.aviso_revisado ?? false,
+    comprovante_url: c.comprovante_url,
   };
 }
 
@@ -241,6 +259,7 @@ export const updateChecklist = async (id: string, updates: Partial<Checklist>): 
     km_atual: updates.km_atual,
     tipo_viagem: updates.tipo_viagem,
     observacoes: updates.observacoes,
+    comprovante_url: updates.comprovante_url,
     ...(updates.itens_check ?? {}),
   };
 

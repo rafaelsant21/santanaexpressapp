@@ -65,6 +65,7 @@ export interface Checklist {
   };
   observacoes: string;
   aviso_revisado?: boolean;
+  comprovante_url?: string;
 }
 
 export interface Logbook {
@@ -85,6 +86,7 @@ export interface Logbook {
   litros_abastecidos: number;
   ocorrencias: string;
   status: 'Em andamento' | 'Finalizada' | 'Cancelada';
+  comprovante_url?: string;
 }
 
 export type UserRole = 'admin' | 'driver';

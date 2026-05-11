@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin } from 'lucide-react';
+import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon } from 'lucide-react';
 import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook } from '@/services/supabaseService';
 import { Vehicle, Logbook, TipoViagem } from '@/services/types';
+import { FileUpload } from '@/components/ui/FileUpload';
 import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -31,6 +32,7 @@ const DEFAULT_FORM: any = {
   litros_abastecidos: '' as number | string,
   ocorrencias: '',
   status: 'Em andamento',
+  comprovante_url: '',
 };
 
 export default function DiarioBordoPage() {
@@ -302,6 +304,17 @@ export default function DiarioBordoPage() {
                         </td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-right">
                           <div className="flex justify-end gap-1">
+                            {log.comprovante_url && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => window.open(log.comprovante_url, '_blank')}
+                                title="Ver Anexo"
+                                className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                              >
+                                <ImageIcon className="h-4 w-4" />
+                              </Button>
+                            )}
                             {(isAdmin || log.status === 'Em andamento') && (
                               <>
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}>
@@ -438,6 +451,13 @@ export default function DiarioBordoPage() {
               </Select>
             </div>
           </div>
+
+          <FileUpload 
+            bucket="diario-bordo"
+            label="Anexo de Viagem (Opcional)"
+            value={formData.comprovante_url}
+            onChange={(url) => setFormData({ ...formData, comprovante_url: url })}
+          />
 
           <div className="flex justify-end gap-2 sticky bottom-0 z-10 bg-card py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t border-border mt-6">
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
