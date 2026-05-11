@@ -253,7 +253,7 @@ export default function DespesasOperacionaisPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-0 bg-background h-full">
+    <div className="flex flex-col min-h-0 bg-background h-full overflow-hidden">
       <header className="border-b border-border bg-[#0f172b] flex flex-col md:flex-row md:items-center justify-between p-4 md:px-8 md:h-16 shrink-0 gap-4">
         <div>
           <h1 className="text-lg font-semibold tracking-tight">Despesas Operacionais</h1>
@@ -269,7 +269,7 @@ export default function DespesasOperacionaisPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 space-y-6 scroll-smooth">
         {/* Dashboard Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-4">
@@ -500,13 +500,50 @@ export default function DespesasOperacionaisPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Comprovante (Simulado)</Label>
+              <Label>Comprovante</Label>
               <div className="flex flex-col gap-2">
-                <div className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-white/5 transition-colors cursor-pointer">
-                  <ImageIcon className="h-8 w-8 mb-2" />
-                  <span className="text-xs">Clique para anexar foto/recibo</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  id="receipt-upload" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, comprovante_url: reader.result as string });
+                        toast.success('Foto anexada com sucesso!');
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                <div 
+                  onClick={() => document.getElementById('receipt-upload')?.click()}
+                  className="w-full h-40 border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:bg-primary/5 hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden"
+                >
+                  {formData.comprovante_url ? (
+                    <>
+                      <img src={formData.comprovante_url} alt="Comprovante" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                      <div className="relative z-10 flex flex-col items-center bg-black/60 p-3 rounded-lg backdrop-blur-sm border border-white/10">
+                        <CheckCircle2 className="h-6 w-6 mb-1 text-green-400" />
+                        <span className="text-[10px] font-bold text-white uppercase">Foto Anexada</span>
+                        <span className="text-[9px] text-white/70">Clique para trocar</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-white/5 rounded-full mb-3">
+                        <ImageIcon className="h-6 w-6" />
+                      </div>
+                      <span className="text-xs font-medium">Anexar foto do recibo</span>
+                      <span className="text-[10px] text-muted-foreground mt-1 px-4 text-center">Toque para abrir a câmera ou galeria</span>
+                    </>
+                  )}
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">Dica: Anexe fotos nítidas da nota fiscal ou recibo para agilizar a aprovação.</p>
+                <p className="text-[10px] text-muted-foreground italic text-center">Obrigatório para despesas acima de R$ 50,00.</p>
               </div>
             </div>
           </div>
