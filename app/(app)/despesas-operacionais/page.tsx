@@ -142,6 +142,19 @@ export default function DespesasOperacionaisPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // Validação Extra
+      if (!formData.vehicle_id || !formData.motorista || !formData.tipo || !formData.valor) {
+        toast.error('Por favor, preencha todos os campos obrigatórios');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.cidade || !formData.estado) {
+        toast.error('Localização (Cidade/Estado) é obrigatória');
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload: Omit<Expense, 'id'> = {
         ...formData,
         valor: Number(formData.valor) || 0,
@@ -401,7 +414,7 @@ export default function DespesasOperacionaisPage() {
         onClose={() => setIsModalOpen(false)} 
         title={editingExpense ? 'Editar Despesa' : 'Registrar Nova Despesa'}
       >
-        <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto overflow-x-hidden pr-1">
           {/* Sessão 1: Informações Básicas */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80 flex items-center gap-2">
@@ -430,7 +443,7 @@ export default function DespesasOperacionaisPage() {
               </div>
               <div className="space-y-1">
                 <Label>Hora</Label>
-                <Input type="time" value={formData.hora} onChange={e => setFormData({ ...formData, hora: e.target.value })} />
+                <Input required type="time" value={formData.hora} onChange={e => setFormData({ ...formData, hora: e.target.value })} />
               </div>
             </div>
           </div>
@@ -476,11 +489,11 @@ export default function DespesasOperacionaisPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Cidade</Label>
-                <Input value={formData.cidade} onChange={e => setFormData({ ...formData, cidade: e.target.value })} placeholder="Ex: São Paulo" />
+                <Input required value={formData.cidade} onChange={e => setFormData({ ...formData, cidade: e.target.value })} placeholder="Ex: São Paulo" />
               </div>
               <div className="space-y-1">
                 <Label>Estado (UF)</Label>
-                <Input value={formData.estado} onChange={e => setFormData({ ...formData, estado: e.target.value.toUpperCase() })} maxLength={2} placeholder="Ex: SP" />
+                <Input required value={formData.estado} onChange={e => setFormData({ ...formData, estado: e.target.value.toUpperCase() })} maxLength={2} placeholder="Ex: SP" />
               </div>
             </div>
           </div>

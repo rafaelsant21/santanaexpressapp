@@ -30,7 +30,7 @@ export function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, o
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+        <div className="overflow-y-auto overflow-x-hidden p-4 sm:p-6 scroll-smooth">
           {children}
         </div>
       </div>
