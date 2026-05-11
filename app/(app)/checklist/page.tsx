@@ -21,12 +21,22 @@ const DEFAULT_ITENS = {
   documentos_ok: false,
 };
 
-const DEFAULT_FORM: any = {
+interface ChecklistFormData {
+  vehicle_id: string;
+  data: string;
+  motorista: string;
+  km_atual: number | string;
+  tipo_viagem: TipoViagem;
+  itens_check: typeof DEFAULT_ITENS;
+  observacoes: string;
+}
+
+const DEFAULT_FORM: ChecklistFormData = {
   vehicle_id: '',
   data: new Date().toISOString().substring(0, 16),
   motorista: '',
-  km_atual: '' as number | string,
-  tipo_viagem: 'Entrega' as TipoViagem,
+  km_atual: '',
+  tipo_viagem: 'Entrega',
   itens_check: { ...DEFAULT_ITENS },
   observacoes: '',
 };
@@ -84,7 +94,7 @@ export default function ChecklistPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<Checklist | null>(null);
-  const [formData, setFormData] = useState<any>({ ...DEFAULT_FORM });
+  const [formData, setFormData] = useState<ChecklistFormData>({ ...DEFAULT_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
@@ -125,11 +135,14 @@ export default function ChecklistPage() {
 
   const markAllOk = () => {
     const allTrue = Object.fromEntries(Object.keys(DEFAULT_ITENS).map(k => [k, true]));
-    setFormData(prev => ({ ...prev, itens_check: allTrue as typeof DEFAULT_ITENS }));
+    setFormData((prev: ChecklistFormData) => ({ 
+      ...prev, 
+      itens_check: allTrue as typeof DEFAULT_ITENS 
+    }));
   };
 
   const toggleItem = (key: ItemKey) => {
-    setFormData(prev => ({
+    setFormData((prev: ChecklistFormData) => ({
       ...prev,
       itens_check: { ...prev.itens_check, [key]: !prev.itens_check[key] },
     }));
