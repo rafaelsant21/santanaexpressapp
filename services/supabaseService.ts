@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Vehicle, FuelLog, Maintenance, Checklist, Logbook } from './types';
+import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense } from './types';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -306,5 +306,45 @@ export const updateLogbook = async (id: string, updates: Partial<Logbook>): Prom
 export const deleteLogbook = async (id: string): Promise<void> => {
   const { error } = await supabase.from('logbooks').delete().eq('id', id);
   if (error) handleError(error, 'deleteLogbook');
+};
+
+// ─── DESPESAS OPERACIONAIS ───────────────────────────────────────────────────
+
+export const getExpenses = async (): Promise<Expense[]> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .order('data', { ascending: false });
+
+  if (error) handleError(error, 'getExpenses');
+  return (data ?? []) as Expense[];
+};
+
+export const createExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .insert([expense])
+    .select()
+    .single();
+
+  if (error) handleError(error, 'createExpense');
+  return data as Expense;
+};
+
+export const updateExpense = async (id: string, updates: Partial<Expense>): Promise<Expense> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) handleError(error, 'updateExpense');
+  return data as Expense;
+};
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  const { error } = await supabase.from('expenses').delete().eq('id', id);
+  if (error) handleError(error, 'deleteExpense');
 };
 

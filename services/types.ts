@@ -95,3 +95,46 @@ export interface UserSession {
   role: UserRole;
   isLoggedIn: boolean;
 }
+
+// ─── DESPESAS OPERACIONAIS ───────────────────────────────────────────────────
+
+export type ExpenseType = 
+  | 'Pedágio' 
+  | 'Alimentação' 
+  | 'Combustível' 
+  | 'Estacionamento' 
+  | 'Hotel/Pernoite' 
+  | 'Lavagem' 
+  | 'Manutenção emergencial' 
+  | 'Multa' 
+  | 'Adiantamento' 
+  | 'Outros';
+
+export type PaymentMethod = 
+  | 'Dinheiro' 
+  | 'PIX' 
+  | 'Cartão' 
+  | 'Empresa' 
+  | 'Outro';
+
+export type ExpenseStatus = 
+  | 'Pendente' 
+  | 'Aprovada' 
+  | 'Reembolsada' 
+  | 'Recusada';
+
+export interface Expense {
+  id: string;
+  vehicle_id: string;
+  motorista: string;
+  data: string;
+  hora: string;
+  tipo: ExpenseType;
+  valor: number;
+  forma_pagamento: PaymentMethod;
+  cidade: string;
+  estado: string;
+  observacoes: string;
+  comprovante_url?: string;
+  status: ExpenseStatus;
+}
