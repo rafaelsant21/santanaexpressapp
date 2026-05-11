@@ -75,7 +75,7 @@ export default function CombustivelPage() {
       setFormData({
         vehicle_id: log.vehicle_id,
         motorista: log.motorista ?? '',
-        data: new Date(log.data).toISOString().substring(0, 10),
+        data: log.data ? log.data.substring(0, 10) : '',
         litros: log.litros,
         valor_total: log.valor_total,
         km_no_abastecimento: log.km_no_abastecimento
@@ -103,7 +103,7 @@ export default function CombustivelPage() {
         litros: Number(formData.litros) || 0,
         valor_total: Number(formData.valor_total) || 0,
         km_no_abastecimento: Number(formData.km_no_abastecimento) || 0,
-        data: new Date(formData.data).toISOString()
+        data: formData.data || new Date().toISOString().substring(0, 10),
       };
 
       if (editingLog) {
@@ -156,7 +156,7 @@ export default function CombustivelPage() {
         if (dist > 0 && log.litros > 0) media = (dist / log.litros).toFixed(2) + ' km/l';
       }
       return {
-        'Data': format(new Date(log.data), 'dd/MM/yyyy'),
+        'Data': format(new Date(log.data.substring(0,10) + 'T00:00'), 'dd/MM/yyyy'),
         'Veículo (Placa)': vehicle?.placa ?? '',
         'Veículo (Modelo)': vehicle ? `${vehicle.marca} ${vehicle.modelo}` : '',
         'Motorista': log.motorista ?? '',
@@ -253,7 +253,7 @@ export default function CombustivelPage() {
                     return (
                       <tr key={log.id}>
                         <td className="px-4 py-3 text-[13px] border-b border-border font-medium">
-                          {format(new Date(log.data), "dd/MM/yyyy")}
+                          {format(new Date(log.data.substring(0,10) + 'T00:00'), "dd/MM/yyyy")}
                         </td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{vehicle ? `${vehicle.placa} - ${vehicle.modelo}` : 'Desconhecido'}</td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{log.motorista || '—'}</td>

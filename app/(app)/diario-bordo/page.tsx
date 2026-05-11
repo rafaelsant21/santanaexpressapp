@@ -408,7 +408,7 @@ export default function DiarioBordoPage() {
                     return (
                       <tr key={log.id} className="hover:bg-white/5 transition-colors">
                         <td className="px-4 py-3 text-[13px] border-b border-border">
-                          <div className="font-medium text-foreground">{log.data_saida ? format(new Date(log.data_saida), 'dd/MM/yyyy') : '—'}</div>
+                          <div className="font-medium text-foreground">{log.data_saida ? format(new Date(log.data_saida.substring(0,10) + 'T00:00'), 'dd/MM/yyyy') : '—'}</div>
                           <div className="text-xs text-muted-foreground">{log.hora_saida || '—'}</div>
                         </td>
                         <td className="px-4 py-3 text-[13px] border-b border-border">

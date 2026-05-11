@@ -122,7 +122,7 @@ export default function ChecklistPage() {
       setEditingLog(log);
       setFormData({
         vehicle_id: log.vehicle_id,
-        data: new Date(log.data).toISOString().substring(0, 16),
+        data: log.data ? log.data.substring(0, 10) : '',
         motorista: log.motorista,
         km_atual: log.km_atual,
         tipo_viagem: log.tipo_viagem,
@@ -159,7 +159,7 @@ export default function ChecklistPage() {
       const payload: any = { 
         ...formData, 
         km_atual: Number(formData.km_atual) || 0,
-        data: new Date(formData.data).toISOString() 
+        data: formData.data || new Date().toISOString().substring(0, 10),
       };
       if (editingLog) {
         await updateChecklist(editingLog.id, payload);
@@ -244,7 +244,7 @@ export default function ChecklistPage() {
                   return (
                     <tr key={log.id} className="hover:bg-white/5 transition-colors">
                       <td className="px-4 py-3 text-[13px] border-b border-border font-medium whitespace-nowrap">
-                        {format(new Date(log.data), 'dd/MM/yy HH:mm')}
+                        {format(new Date(log.data.substring(0,10) + 'T00:00'), 'dd/MM/yy')}
                       </td>
                       <td className="px-4 py-3 text-[13px] border-b border-border">{vehicle ? `${vehicle.placa}` : '—'}</td>
                       <td className="px-4 py-3 text-[13px] border-b border-border">{log.motorista}</td>

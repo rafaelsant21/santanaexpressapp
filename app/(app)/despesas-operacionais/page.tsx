@@ -159,7 +159,7 @@ export default function DespesasOperacionaisPage() {
       const payload: Omit<Expense, 'id'> = {
         ...formData,
         valor: Number(formData.valor) || 0,
-        data: new Date(formData.data).toISOString()
+        data: formData.data || new Date().toISOString().substring(0, 10),
       };
 
       if (editingExpense) {
