@@ -406,7 +406,10 @@ export default function DashboardPage() {
                   <tr>
                     <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Veículo</th>
                     <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Status</th>
-                    <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Custo Total</th>
+                    <th className="px-4 py-3 text-[10px] text-yellow-400/70 uppercase tracking-widest font-bold">Combustível</th>
+                    <th className="px-4 py-3 text-[10px] text-blue-400/70 uppercase tracking-widest font-bold">Manutenção</th>
+                    <th className="px-4 py-3 text-[10px] text-orange-400/70 uppercase tracking-widest font-bold">Despesas</th>
+                    <th className="px-4 py-3 text-[10px] text-green-400/70 uppercase tracking-widest font-bold">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
@@ -415,10 +418,7 @@ export default function DashboardPage() {
                     const vMaint = maintenances.filter(m => m.vehicle_id === v.id && m.status === 'concluída').reduce((a, m) => a + m.custo, 0);
                     const vExp = expenses.filter(e => e.vehicle_id === v.id && e.status !== 'Recusada').reduce((a, e) => a + e.valor, 0);
                     const total = vFuel + vMaint + vExp;
-                    
-                    // Mock da média (em sistema real calcularia via logbooks)
-                    const avg = (vFuel / 5.5 / (v.km_atual % 1000 + 1)).toFixed(1);
-                    
+
                     return (
                       <tr key={v.id} className="hover:bg-white/[0.02] transition-colors group">
                         <td className="px-4 py-4">
@@ -432,8 +432,26 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex flex-col">
-                            <span className="font-bold text-foreground">R$ {fmt(total)}</span>
-                            <span className="text-[10px] text-muted-foreground">{v.km_atual.toLocaleString()} km rodados</span>
+                            <span className="font-semibold text-yellow-400">R$ {fmt(vFuel)}</span>
+                            <span className="text-[10px] text-muted-foreground">{fuelLogs.filter(l => l.vehicle_id === v.id).length} abast.</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-blue-400">R$ {fmt(vMaint)}</span>
+                            <span className="text-[10px] text-muted-foreground">{maintenances.filter(m => m.vehicle_id === v.id && m.status === 'concluída').length} serv.</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-orange-400">R$ {fmt(vExp)}</span>
+                            <span className="text-[10px] text-muted-foreground">{expenses.filter(e => e.vehicle_id === v.id).length} desp.</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-lg text-foreground">R$ {fmt(total)}</span>
+                            <span className="text-[10px] text-muted-foreground">{v.km_atual.toLocaleString()} km</span>
                           </div>
                         </td>
                       </tr>
