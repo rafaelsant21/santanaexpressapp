@@ -556,7 +556,6 @@ export default function DespesasOperacionaisPage() {
                     </>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground italic text-center">Obrigatório para despesas acima de R$ 50,00.</p>
               </div>
             </div>
           </div>
