@@ -306,7 +306,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ── Gráfico de Evolução ───────────────────────────────────────── */}
-          <CardContainer title="Evolução de Gastos Operacionais" className="lg:col-span-2">
+          <CardContainer title="Evolução de Gastos Operacionais" className="lg:col-span-3">
             <div className="h-[320px] w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
@@ -352,47 +352,6 @@ export default function DashboardPage() {
               <LegendItem color="#ef4444" label="Combustível" />
               <LegendItem color="#3b82f6" label="Manutenção" />
               <LegendItem color="#10b981" label="Despesas" />
-            </div>
-          </CardContainer>
-
-          {/* ── Distribuição por Categoria ────────────────────────────────── */}
-          <CardContainer title="Gastos por Categoria">
-            <div className="h-[280px] w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expensesByCategory}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={85}
-                    paddingAngle={5}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {expensesByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
-                    itemStyle={{ fontSize: '12px' }}
-                    formatter={(value: any) => `R$ ${fmt(Number(value) || 0)}`}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2 mt-2 px-4 max-h-[120px] overflow-y-auto custom-scrollbar pr-2">
-              {expensesByCategory.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-muted-foreground">{item.name}</span>
-                  </div>
-                  <span className="font-bold">R$ {fmt(item.value)}</span>
-                </div>
-              ))}
-              {expensesByCategory.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">Sem dados de despesas.</p>}
             </div>
           </CardContainer>
         </div>
