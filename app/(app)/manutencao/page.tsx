@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
 import { Wrench, Plus, Edit, Trash2, CheckSquare, Loader2, FileDown } from 'lucide-react';
-import { getVehicles, getMaintenances, createMaintenance, updateMaintenance, deleteMaintenance } from '@/services/supabaseService';
+import { getVehicles, getMaintenances, createMaintenance, updateMaintenance, deleteMaintenance, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, Maintenance, MaintenanceStatus, MaintenanceType } from '@/services/types';
 import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
@@ -116,6 +116,17 @@ export default function ManutencaoPage() {
         await createMaintenance(payload);
         toast.success('Manutenção agendada/registrada');
       }
+
+      // ── Sincroniza KM do veículo na frota (apenas se concluída e KM maior) ──
+      const kmRegistrado = Number(formData.km) || 0;
+      if (kmRegistrado > 0 && formData.status === 'concluída') {
+        const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
+        if (vehicle && kmRegistrado > vehicle.km_atual) {
+          await updateVehicle(vehicle.id, { km_atual: kmRegistrado });
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       setIsModalOpen(false);
       loadData();
     } catch (error) {
@@ -141,6 +152,16 @@ export default function ManutencaoPage() {
       const newStatus = log.status === 'pendente' ? 'concluída' : 'pendente';
       await updateMaintenance(log.id, { status: newStatus });
       toast.success(`Marcado como ${newStatus}`);
+
+      // ── Sincroniza KM quando manutenção é concluída ──────────────────────
+      if (newStatus === 'concluída' && log.km > 0) {
+        const vehicle = vehicles.find(v => v.id === log.vehicle_id);
+        if (vehicle && log.km > vehicle.km_atual) {
+          await updateVehicle(vehicle.id, { km_atual: log.km });
+        }
+      }
+      // ────────────────────────────────────────────────────────────────────
+
       loadData();
     } catch (error) {
       toast.error('Erro ao atualizar status');
