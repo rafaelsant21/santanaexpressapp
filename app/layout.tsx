@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     title: 'Santana',
   },
   icons: {
-    icon: '/icons/icon-192x192.png',
-    apple: '/icons/apple-touch-icon.png',
+    icon: '/icons/icon-192x192.png?v=3',
+    apple: '/icons/apple-touch-icon.png?v=3',
   },
 };
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import Image from 'next/image';
 import { Truck, LogIn, Loader2, AlertCircle } from 'lucide-react';
 import { Button, Input, Label } from '@/components/ui/forms';
 
@@ -32,8 +33,14 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md bg-card border border-border p-8 rounded-2xl shadow-xl relative z-10">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-primary/10 flex items-center justify-center rounded-full mb-4">
-            <Truck className="h-8 w-8 text-primary" />
+          <div className="mb-4">
+            <Image 
+              src="/icons/icon-192x192.png?v=3" 
+              alt="Santana Express Logo" 
+              width={80} 
+              height={80} 
+              className="rounded-2xl shadow-2xl shadow-primary/20"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Santana Express</h1>
           <p className="text-muted-foreground text-sm mt-1">Gestão de Frota</p>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { getChecklists } from '@/services/supabaseService';
+import Image from 'next/image';
 import { Truck, Fuel, Wrench, CheckSquare, LayoutDashboard, LogOut, Menu, Shield, User, BookOpen } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -73,7 +74,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Topbar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <Truck className="h-6 w-6 text-primary" />
+            <Image 
+              src="/icons/icon-192x192.png?v=3" 
+              alt="Santana Express Logo" 
+              width={32} 
+              height={32} 
+              className="rounded-lg"
+            />
           <span className="font-bold text-lg tracking-tight">Santana Express</span>
         </div>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-muted-foreground hover:text-foreground">
@@ -96,8 +103,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}>
         <div className="flex flex-col h-full bg-[#111827]">
           <div className="flex flex-col p-6 border-b border-[#1e293b] md:border-none md:mb-2">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="text-primary font-bold text-xl tracking-tight">SANTANA<span className="text-white">EXPRESS</span></div>
+            <div className="flex items-center gap-3 mb-1">
+              <Image 
+                src="/icons/icon-192x192.png?v=3" 
+                alt="Santana Express Logo" 
+                width={40} 
+                height={40} 
+                className="rounded-lg shadow-lg shadow-primary/20"
+              />
+              <div className="text-primary font-bold text-xl tracking-tight leading-tight">
+                SANTANA<br />
+                <span className="text-white">EXPRESS</span>
+              </div>
             </div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-widest hidden md:block">Gestão de Frota</div>
           </div>
