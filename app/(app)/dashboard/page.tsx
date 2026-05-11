@@ -6,22 +6,14 @@ import {
   Wrench, 
   Fuel, 
   AlertTriangle, 
-  CheckCircle2, 
   Loader2, 
   Bell, 
   X, 
   DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
   Activity, 
-  ArrowUpRight, 
-  ArrowDownRight,
   Clock,
-  Calendar,
-  MapPin,
   Receipt,
-  User,
-  ChevronRight
+  User
 } from 'lucide-react';
 import { 
   getVehicles, 
@@ -455,9 +447,7 @@ export default function DashboardPage() {
                   <tr>
                     <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Veículo</th>
                     <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Status</th>
-                    <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Eficiência</th>
                     <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Custo Total</th>
-                    <th className="px-4 py-3 text-[10px] text-muted-foreground uppercase tracking-widest font-bold text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20">
@@ -482,26 +472,10 @@ export default function DashboardPage() {
                           <StatusBadge status={v.status} />
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex flex-col gap-1.5 max-w-[120px]">
-                            <div className="flex justify-between text-[10px]">
-                              <span className="text-muted-foreground">Saúde</span>
-                              <span className="text-foreground">85%</span>
-                            </div>
-                            <div className="w-full h-1.5 bg-border/40 rounded-full overflow-hidden">
-                              <div className="h-full bg-green-500 rounded-full" style={{ width: '85%' }} />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4">
                           <div className="flex flex-col">
                             <span className="font-bold text-foreground">R$ {fmt(total)}</span>
                             <span className="text-[10px] text-muted-foreground">{v.km_atual.toLocaleString()} km rodados</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-right">
-                          <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </button>
                         </td>
                       </tr>
                     );
