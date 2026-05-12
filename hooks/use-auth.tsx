@@ -24,16 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchProfile = async (userId: string) => {
       try {
-        const { data, error } = await withTimeout<any>(
-          Promise.resolve(
-            supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', userId)
-              .single()
-          ),
-          15000
-        );
+        const { data, error } = await (supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single() as any);
         
         if (error) {
           console.error('Error fetching profile:', error);
@@ -41,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         return data;
       } catch (err) {
-        console.error('Profile fetch failed or timed out:', err);
+        console.error('Profile fetch failed:', err);
         return null;
       }
     };

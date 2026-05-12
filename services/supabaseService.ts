@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent } from './types';
-import { withTimeout, withRetry } from '@/lib/utils';
+import { withRetry } from '@/lib/utils';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -11,24 +11,16 @@ function handleError(error: any, context: string): never {
 }
 
 /**
- * Simplificação radical para garantir estabilidade.
+ * Versão simplificada sem Promise.race/timeout para garantir que nada bloqueie.
  */
 async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<T> {
-  try {
-    const { data, error } = await withTimeout(Promise.resolve(promise), 20000);
-    if (error) handleError(error, context);
-    if (data === null) {
-       // Se for uma lista (nome no plural), retorna array vazio
-       if (context.toLowerCase().includes('get')) return [] as any;
-       throw new Error(`Nenhum dado retornado em ${context}`);
-    }
-    return data as T;
-  } catch (err: any) {
-    if (err.message === 'TIMEOUT_EXCEEDED') {
-      throw new Error(`Tempo esgotado em ${context}. Verifique sua conexão.`);
-    }
-    handleError(err, context);
+  const { data, error } = await Promise.resolve(promise);
+  if (error) handleError(error, context);
+  if (data === null) {
+      if (context.toLowerCase().includes('get')) return [] as any;
+      throw new Error(`Nenhum dado retornado em ${context}`);
   }
+  return data as T;
 }
 
 export const uploadFile = async (bucket: string, file: File): Promise<string> => {
