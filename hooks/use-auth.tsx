@@ -42,11 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Verifica sessão existente ao carregar
+    console.log('[Auth] Checking session...');
     supabase.auth.getSession()
       .then(async ({ data: { session: s } }) => {
+        console.log('[Auth] Session data:', s?.user?.email || 'no session');
         try {
           if (s?.user) {
             const profile = await fetchProfile(s.user.id);
+            console.log('[Auth] Profile fetched:', profile?.name || 'no profile');
             const role = (profile?.role ?? 'motorista') as UserRole;
             setSession({
               id: s.user.id,
@@ -57,18 +60,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
           }
         } catch (err) {
-          console.error('Auth check error:', err);
+          console.error('[Auth] Initialization error:', err);
         } finally {
           setIsLoading(false);
         }
       })
       .catch(err => {
-        console.error('Session fetch error:', err);
+        console.error('[Auth] Session fetch error:', err);
         setIsLoading(false);
       });
 
     // Escuta mudanças de sessão
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
+      console.log('[Auth] State change event:', event);
       try {
         if (s?.user) {
           const profile = await fetchProfile(s.user.id);
@@ -84,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(null);
         }
       } catch (err) {
-        console.error('Auth change error:', err);
+        console.error('[Auth] State change error:', err);
       }
     });
 
@@ -93,25 +97,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
+      console.log('[Auth] Pathname check:', pathname, 'Session:', !!session);
       if (!session && pathname !== '/login') {
+        console.log('[Auth] No session, redirecting to /login');
         router.push('/login');
       } else if (session && pathname === '/login') {
-        // Redireciona baseado no role
-        router.push(session.role === 'admin' ? '/dashboard' : '/checklist');
+        const target = session.role === 'admin' ? '/dashboard' : '/checklist';
+        console.log('[Auth] Session exists, redirecting to', target);
+        router.push(target);
       } else if (pathname === '/') {
-        router.push(session ? (session.role === 'admin' ? '/dashboard' : '/checklist') : '/login');
+        const target = session ? (session.role === 'admin' ? '/dashboard' : '/checklist') : '/login';
+        console.log('[Auth] Root path, redirecting to', target);
+        router.push(target);
       }
     }
   }, [session, isLoading, pathname, router]);
 
   // Login real com Supabase Auth
   const login = async (email: string, password: string): Promise<string | null> => {
+    console.log('[Auth] Attempting login for', email);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return error.message;
+    if (error) {
+      console.error('[Auth] Login error:', error.message);
+      return error.message;
+    }
     return null;
   };
 
   const logout = async () => {
+    console.log('[Auth] Logging out...');
     await supabase.auth.signOut();
     setSession(null);
     router.push('/login');

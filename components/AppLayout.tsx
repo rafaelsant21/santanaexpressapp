@@ -53,7 +53,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [session]);
 
-  if (isLoading || !session) return null;
+  if (isLoading) {
+    return (
+      <div className="h-[100dvh] w-full flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 text-center p-6">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse font-medium">Carregando sistema...</p>
+          <p className="text-xs text-muted-foreground/60 max-w-[200px]">Verificando credenciais e sincronizando dados da frota.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   const isAdmin = session.role === 'admin';
   const navItems = isAdmin ? adminNavItems : driverNavItems;
