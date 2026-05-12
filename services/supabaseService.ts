@@ -370,7 +370,7 @@ export const getProfiles = async () => {
     supabase.from('profiles').select('*').order('name', { ascending: true }),
     'getProfiles'
   );
-  return data;
+  return data ?? [];
 };
 
 export const updateProfileRole = async (id: string, role: 'admin' | 'motorista') => {
