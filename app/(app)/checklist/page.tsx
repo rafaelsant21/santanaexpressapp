@@ -10,6 +10,7 @@ import { FileUpload } from '@/components/ui/FileUpload';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { parseBRL } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_VIAGEM: TipoViagem[] = ['Entrega', 'Coleta', 'Transferência'];
@@ -158,7 +159,7 @@ export default function ChecklistPage() {
     try {
       const payload: any = { 
         ...formData, 
-        km_atual: Number(formData.km_atual) || 0,
+        km_atual: parseBRL(formData.km_atual),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
       if (editingLog) {
@@ -345,7 +346,7 @@ export default function ChecklistPage() {
           {/* Linha 3: KM atual */}
           <div className="space-y-1">
             <Label>KM atual do veículo</Label>
-            <Input required type="number" min={0} placeholder="Ex: 125000" value={formData.km_atual} onChange={e => setFormData({ ...formData, km_atual: e.target.value === '' ? '' : Number(e.target.value) })} />
+            <Input required type="text" inputMode="numeric" placeholder="Ex: 125000" value={formData.km_atual} onChange={e => setFormData({ ...formData, km_atual: e.target.value.replace(/[^0-9]/g, '') })} />
           </div>
 
           {/* Itens de verificação */}

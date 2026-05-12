@@ -11,6 +11,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { parseBRL } from '@/lib/utils';
 import { TripTimer } from '@/components/diario-bordo/TripTimer';
 import { TripControls } from '@/components/diario-bordo/TripControls';
 import { TripTimeline } from '@/components/diario-bordo/TripTimeline';
@@ -227,10 +228,10 @@ export default function DiarioBordoPage() {
     try {
       const payload: any = {
         ...formData,
-        km_inicial: Number(formData.km_inicial) || 0,
-        km_final: Number(formData.km_final) || 0,
-        valor_abastecido: Number(formData.valor_abastecido) || 0,
-        litros_abastecidos: Number(formData.litros_abastecidos) || 0,
+        km_inicial: parseBRL(formData.km_inicial),
+        km_final: parseBRL(formData.km_final),
+        valor_abastecido: parseBRL(formData.valor_abastecido),
+        litros_abastecidos: parseBRL(formData.litros_abastecidos),
         data_saida: formData.data_saida || null,
         hora_saida: formData.hora_saida || null,
         data_chegada: formData.data_chegada || null,
@@ -584,11 +585,11 @@ export default function DiarioBordoPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>KM Inicial</Label>
-                <Input required type="number" min="0" value={formData.km_inicial} onChange={e => setFormData({...formData, km_inicial: e.target.value === '' ? '' : Number(e.target.value)})} />
+                <Input required type="text" inputMode="numeric" placeholder="Ex: 125000" value={formData.km_inicial} onChange={e => setFormData({...formData, km_inicial: e.target.value.replace(/[^0-9]/g, '')})} />
               </div>
               <div className="space-y-2">
                 <Label>KM Final</Label>
-                <Input type="number" min="0" value={formData.km_final} onChange={e => setFormData({...formData, km_final: e.target.value === '' ? '' : Number(e.target.value)})} />
+                <Input type="text" inputMode="numeric" placeholder="Ex: 125000" value={formData.km_final} onChange={e => setFormData({...formData, km_final: e.target.value.replace(/[^0-9]/g, '')})} />
               </div>
               <div className="space-y-2">
                 <Label>Distância</Label>

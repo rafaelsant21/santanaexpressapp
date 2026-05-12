@@ -347,8 +347,8 @@ export default function DashboardPage() {
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
                     itemStyle={{ fontSize: '12px' }}
-                    formatter={(value: number) => [
-                      `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    formatter={(value: any) => [
+                      `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                     ]}
                   />
                   <Area type="monotone" dataKey="Combustível" stroke="#ef4444" fillOpacity={1} fill="url(#colorF)" strokeWidth={3} />

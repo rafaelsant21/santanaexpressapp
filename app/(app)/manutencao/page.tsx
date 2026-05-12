@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
+import { parseBRL } from '@/lib/utils';
+
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 
 export default function ManutencaoPage() {
@@ -104,8 +106,8 @@ export default function ManutencaoPage() {
     try {
       const payload: any = {
         ...formData,
-        custo: Number(formData.custo) || 0,
-        km: Number(formData.km) || 0,
+        custo: parseBRL(formData.custo),
+        km: parseBRL(formData.km),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
 
@@ -348,16 +350,20 @@ export default function ManutencaoPage() {
                 onChange={e => setFormData({...formData, data: e.target.value})}
               />
             </div>
-            <div className="space-y-2">
-              <Label>KM do Serviço</Label>
-              <Input 
-                required 
-                type="number"
-                min="0"
-                value={formData.km} 
-                onChange={e => setFormData({...formData, km: e.target.value === '' ? '' : parseInt(e.target.value)})}
-              />
-            </div>
+            <div className="space-y-1">
+                <Label>KM no Serviço</Label>
+                <Input 
+                  required 
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ex: 125000" 
+                  value={formData.km} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, km: val });
+                  }} 
+                />
+              </div>
           </div>
 
           <div className="space-y-2">
@@ -381,16 +387,20 @@ export default function ManutencaoPage() {
                 <option value="corretiva">Corretiva</option>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Custo (R$)</Label>
-              <Input 
-                required 
-                type="number"
-                min="0" step="0.01"
-                value={formData.custo} 
-                onChange={e => setFormData({...formData, custo: e.target.value === '' ? '' : parseFloat(e.target.value)})}
-              />
-            </div>
+            <div className="space-y-1">
+                <Label>Custo (R$)</Label>
+                <Input 
+                  required 
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00" 
+                  value={formData.custo} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9,]/g, '');
+                    setFormData({ ...formData, custo: val });
+                  }} 
+                />
+              </div>
             <div className="space-y-2">
               <Label>Status</Label>
               <Select 

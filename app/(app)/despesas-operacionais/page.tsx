@@ -28,6 +28,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { parseBRL } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_DESPESA: ExpenseType[] = [
@@ -158,7 +159,7 @@ export default function DespesasOperacionaisPage() {
 
       const payload: Omit<Expense, 'id'> = {
         ...formData,
-        valor: Number(formData.valor) || 0,
+        valor: parseBRL(formData.valor),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
 
@@ -476,12 +477,15 @@ export default function DespesasOperacionaisPage() {
                 <Label>Valor Total (R$)</Label>
                 <Input 
                   required 
-                  type="number" 
-                  step="0.01" 
-                  min="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0,00" 
                   value={formData.valor} 
-                  onChange={e => setFormData({ ...formData, valor: e.target.value })} 
+                  onChange={e => {
+                    // Permite apenas números, vírgula e ponto
+                    const val = e.target.value.replace(/[^0-9,.]/g, '');
+                    setFormData({ ...formData, valor: val });
+                  }} 
                 />
               </div>
             </div>

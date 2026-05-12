@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
+import { parseBRL } from '@/lib/utils';
+
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 
 export default function CombustivelPage() {
@@ -100,9 +102,9 @@ export default function CombustivelPage() {
     try {
       const payload: any = {
         ...formData,
-        litros: Number(formData.litros) || 0,
-        valor_total: Number(formData.valor_total) || 0,
-        km_no_abastecimento: Number(formData.km_no_abastecimento) || 0,
+        litros: parseBRL(formData.litros),
+        valor_total: parseBRL(formData.valor_total),
+        km_no_abastecimento: parseBRL(formData.km_no_abastecimento),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
 
@@ -329,39 +331,51 @@ export default function CombustivelPage() {
                 onChange={e => setFormData({...formData, data: e.target.value})}
               />
             </div>
-            <div className="space-y-2">
-              <Label>KM no Painel</Label>
-              <Input 
-                required 
-                type="number"
-                min="0"
-                value={formData.km_no_abastecimento} 
-                onChange={e => setFormData({...formData, km_no_abastecimento: e.target.value === '' ? '' : parseInt(e.target.value)})}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label>KM no Abastecimento</Label>
+                <Input 
+                  required 
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ex: 125000" 
+                  value={formData.km_no_abastecimento} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, km_no_abastecimento: val });
+                  }} 
+                />
+              </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Litros</Label>
-              <Input 
-                required 
-                type="number"
-                min="0.1" step="0.1"
-                value={formData.litros} 
-                onChange={e => setFormData({...formData, litros: e.target.value === '' ? '' : parseFloat(e.target.value)})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Valor Total (R$)</Label>
-              <Input 
-                required 
-                type="number"
-                min="0.01" step="0.01"
-                value={formData.valor_total} 
-                onChange={e => setFormData({...formData, valor_total: e.target.value === '' ? '' : parseFloat(e.target.value)})}
-              />
-            </div>
+              <div className="space-y-1">
+                <Label>Litros</Label>
+                <Input 
+                  required 
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00" 
+                  value={formData.litros} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9,.]/g, '');
+                    setFormData({ ...formData, litros: val });
+                  }} 
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Valor Total (R$)</Label>
+                <Input 
+                  required 
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00" 
+                  value={formData.valor_total} 
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9,.]/g, '');
+                    setFormData({ ...formData, valor_total: val });
+                  }} 
+                />
+              </div>
           </div>
 
           <div className="flex justify-end gap-2 sticky bottom-0 z-10 bg-card py-4 px-4 sm:px-6 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 border-t border-border mt-6">
