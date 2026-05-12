@@ -11,24 +11,21 @@ function handleError(error: any, context: string): never {
 }
 
 /**
- * Wrapper para chamadas Supabase com timeout e tratamento de erro centralizado.
+ * Simplificação radical para garantir estabilidade.
  */
-async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<{ data: T; error: any }> {
+async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<T> {
   try {
-    const result = await withTimeout(Promise.resolve(promise), 15000);
-    
-    if (result?.error) {
-       handleError(result.error, context);
+    const { data, error } = await withTimeout(Promise.resolve(promise), 20000);
+    if (error) handleError(error, context);
+    if (data === null) {
+       // Se for uma lista (nome no plural), retorna array vazio
+       if (context.toLowerCase().includes('get')) return [] as any;
+       throw new Error(`Nenhum dado retornado em ${context}`);
     }
-    
-    if (!result?.data && context.toLowerCase().includes('get')) {
-        return { data: [] as any, error: null };
-    }
-
-    return result as { data: T; error: any };
+    return data as T;
   } catch (err: any) {
     if (err.message === 'TIMEOUT_EXCEEDED') {
-      throw new Error(`O tempo de resposta expirou ao tentar ${context}. Verifique sua conexão.`);
+      throw new Error(`Tempo esgotado em ${context}. Verifique sua conexão.`);
     }
     handleError(err, context);
   }
@@ -39,11 +36,7 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
   const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  const { error } = await withTimeout(
-    supabase.storage.from(bucket).upload(filePath, file),
-    30000 
-  );
-
+  const { error } = await supabase.storage.from(bucket).upload(filePath, file);
   if (error) handleError(error, 'uploadFile');
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
@@ -53,27 +46,24 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 // ─── VEÍCULOS ────────────────────────────────────────────────────────────────
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
-  const { data } = await call(
+  return call<Vehicle[]>(
     supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
     'getVehicles'
   );
-  return (data ?? []) as Vehicle[];
 };
 
 export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehicle> => {
-  const { data } = await call(
+  return call<Vehicle>(
     supabase.from('vehicles').insert([vehicle]).select().single(),
     'createVehicle'
   );
-  return data as Vehicle;
 };
 
 export const updateVehicle = async (id: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
-  const { data } = await call(
+  return call<Vehicle>(
     supabase.from('vehicles').update(updates).eq('id', id).select().single(),
     'updateVehicle'
   );
-  return data as Vehicle;
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {
@@ -86,29 +76,26 @@ export const deleteVehicle = async (id: string): Promise<void> => {
 // ─── ABASTECIMENTOS ──────────────────────────────────────────────────────────
 
 export const getFuelLogs = async (): Promise<FuelLog[]> => {
-  const { data } = await call(
+  return call<FuelLog[]>(
     supabase.from('fuel_logs').select('*').order('created_at', { ascending: false }),
     'getFuelLogs'
   );
-  return (data ?? []) as FuelLog[];
 };
 
 export const createFuelLog = async (log: Omit<FuelLog, 'id'>): Promise<FuelLog> => {
   return withRetry(async () => {
-    const { data } = await call(
+    return call<FuelLog>(
       supabase.from('fuel_logs').insert([log]).select().single(),
       'createFuelLog'
     );
-    return data as FuelLog;
   }, 2);
 };
 
 export const updateFuelLog = async (id: string, updates: Partial<FuelLog>): Promise<FuelLog> => {
-  const { data } = await call(
+  return call<FuelLog>(
     supabase.from('fuel_logs').update(updates).eq('id', id).select().single(),
     'updateFuelLog'
   );
-  return data as FuelLog;
 };
 
 export const deleteFuelLog = async (id: string): Promise<void> => {
@@ -121,27 +108,24 @@ export const deleteFuelLog = async (id: string): Promise<void> => {
 // ─── MANUTENÇÕES ─────────────────────────────────────────────────────────────
 
 export const getMaintenances = async (): Promise<Maintenance[]> => {
-  const { data } = await call(
+  return call<Maintenance[]>(
     supabase.from('maintenances').select('*').order('created_at', { ascending: false }),
     'getMaintenances'
   );
-  return (data ?? []) as Maintenance[];
 };
 
 export const createMaintenance = async (maintenance: Omit<Maintenance, 'id'>): Promise<Maintenance> => {
-  const { data } = await call(
+  return call<Maintenance>(
     supabase.from('maintenances').insert([maintenance]).select().single(),
     'createMaintenance'
   );
-  return data as Maintenance;
 };
 
 export const updateMaintenance = async (id: string, updates: Partial<Maintenance>): Promise<Maintenance> => {
-  const { data } = await call(
+  return call<Maintenance>(
     supabase.from('maintenances').update(updates).eq('id', id).select().single(),
     'updateMaintenance'
   );
-  return data as Maintenance;
 };
 
 export const deleteMaintenance = async (id: string): Promise<void> => {
@@ -237,20 +221,20 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
 }
 
 export const getChecklists = async (): Promise<Checklist[]> => {
-  const { data } = await call(
-    supabase.from('checklists').select('*').order('created_at', { ascending: false }).limit(100),
+  const data = await call<ChecklistRow[]>(
+    supabase.from('checklists').select('*').order('created_at', { ascending: false }).limit(50),
     'getChecklists'
   );
-  return (data as ChecklistRow[] ?? []).map(rowToChecklist);
+  return (data ?? []).map(rowToChecklist);
 };
 
 export const createChecklist = async (checklist: Omit<Checklist, 'id'>): Promise<Checklist> => {
   const row = checklistToRow(checklist);
-  const { data } = await call(
+  const data = await call<ChecklistRow>(
     supabase.from('checklists').insert([row]).select().single(),
     'createChecklist'
   );
-  return rowToChecklist(data as ChecklistRow);
+  return rowToChecklist(data);
 };
 
 export const updateChecklist = async (id: string, updates: Partial<Checklist>): Promise<Checklist> => {
@@ -259,11 +243,11 @@ export const updateChecklist = async (id: string, updates: Partial<Checklist>): 
     Object.assign(flat, updates.itens_check);
     delete flat.itens_check;
   }
-  const { data } = await call(
+  const data = await call<ChecklistRow>(
     supabase.from('checklists').update(flat).eq('id', id).select().single(),
     'updateChecklist'
   );
-  return rowToChecklist(data as ChecklistRow);
+  return rowToChecklist(data);
 };
 
 export const deleteChecklist = async (id: string): Promise<void> => {
@@ -274,36 +258,30 @@ export const deleteChecklist = async (id: string): Promise<void> => {
 };
 
 export const marcarAvisoRevisado = async (id: string): Promise<void> => {
-  await call(
-    supabase.from('checklists').update({ aviso_revisado: true }).eq('id', id),
-    'marcarAvisoRevisado'
-  );
+  await supabase.from('checklists').update({ aviso_revisado: true }).eq('id', id);
 };
 
 // ─── DIÁRIO DE BORDO ──────────────────────────────────────────────────────────
 
 export const getLogbooks = async (): Promise<Logbook[]> => {
-  const { data } = await call(
-    supabase.from('logbooks').select('*').order('created_at', { ascending: false }).limit(100),
+  return call<Logbook[]>(
+    supabase.from('logbooks').select('*').order('created_at', { ascending: false }).limit(50),
     'getLogbooks'
   );
-  return (data ?? []) as Logbook[];
 };
 
 export const createLogbook = async (logbook: Omit<Logbook, 'id'>): Promise<Logbook> => {
-  const { data } = await call(
+  return call<Logbook>(
     supabase.from('logbooks').insert([logbook]).select().single(),
     'createLogbook'
   );
-  return data as Logbook;
 };
 
 export const updateLogbook = async (id: string, updates: Partial<Logbook>): Promise<Logbook> => {
-  const { data } = await call(
+  return call<Logbook>(
     supabase.from('logbooks').update(updates).eq('id', id).select().single(),
     'updateLogbook'
   );
-  return data as Logbook;
 };
 
 export const deleteLogbook = async (id: string): Promise<void> => {
@@ -316,27 +294,24 @@ export const deleteLogbook = async (id: string): Promise<void> => {
 // ─── DESPESAS OPERACIONAIS ───────────────────────────────────────────────────
 
 export const getExpenses = async (): Promise<Expense[]> => {
-  const { data } = await call(
-    supabase.from('expenses').select('*').order('data', { ascending: false }).limit(100),
+  return call<Expense[]>(
+    supabase.from('expenses').select('*').order('data', { ascending: false }).limit(50),
     'getExpenses'
   );
-  return (data ?? []) as Expense[];
 };
 
 export const createExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
-  const { data } = await call(
+  return call<Expense>(
     supabase.from('expenses').insert([expense]).select().single(),
     'createExpense'
   );
-  return data as Expense;
 };
 
 export const updateExpense = async (id: string, updates: Partial<Expense>): Promise<Expense> => {
-  const { data } = await call(
+  return call<Expense>(
     supabase.from('expenses').update(updates).eq('id', id).select().single(),
     'updateExpense'
   );
-  return data as Expense;
 };
 
 export const deleteExpense = async (id: string): Promise<void> => {
@@ -349,20 +324,18 @@ export const deleteExpense = async (id: string): Promise<void> => {
 // ─── EVENTOS DE VIAGEM (PAUSAS / ESPERAS) ────────────────────────────────────
 
 export const getTripEvents = async (logbook_id: string): Promise<TripEvent[]> => {
-  const { data } = await call(
+  return call<TripEvent[]>(
     supabase.from('trip_events').select('*').eq('logbook_id', logbook_id).order('timestamp', { ascending: true }),
     'getTripEvents'
   );
-  return (data ?? []) as TripEvent[];
 };
 
 export const createTripEvent = async (event: Omit<TripEvent, 'id' | 'created_at'>): Promise<TripEvent> => {
   return withRetry(async () => {
-    const { data } = await call(
+    return call<TripEvent>(
       supabase.from('trip_events').insert([event]).select().single(),
       'createTripEvent'
     );
-    return data as TripEvent;
   }, 2);
 };
 
@@ -376,7 +349,7 @@ export const deleteTripEvent = async (id: string): Promise<void> => {
 // ─── PERFIS (USUÁRIOS) ────────────────────────────────────────────────────────
 
 export const getProfiles = async () => {
-  const { data } = await call(
+  const data = await call<any[]>(
     supabase.from('profiles').select('*').order('name', { ascending: true }),
     'getProfiles'
   );
@@ -384,9 +357,8 @@ export const getProfiles = async () => {
 };
 
 export const updateProfileRole = async (id: string, role: 'admin' | 'motorista') => {
-  const { data } = await call(
+  return call<any>(
     supabase.from('profiles').update({ role }).eq('id', id).select().single(),
     'updateProfileRole'
   );
-  return data;
 };
