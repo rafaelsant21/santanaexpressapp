@@ -13,7 +13,7 @@ function handleError(error: any, context: string): never {
 /**
  * Wrapper para chamadas Supabase com timeout e tratamento de erro centralizado.
  */
-async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<{ data: T | null; error: any }> {
+async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<{ data: T; error: any }> {
   try {
     const result = await withTimeout(Promise.resolve(promise), 15000);
     
@@ -21,7 +21,11 @@ async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, con
        handleError(result.error, context);
     }
     
-    return result;
+    if (!result?.data && context.toLowerCase().includes('get')) {
+        return { data: [] as any, error: null };
+    }
+
+    return result as { data: T; error: any };
   } catch (err: any) {
     if (err.message === 'TIMEOUT_EXCEEDED') {
       throw new Error(`O tempo de resposta expirou ao tentar ${context}. Verifique sua conexão.`);
@@ -37,7 +41,7 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 
   const { error } = await withTimeout(
     supabase.storage.from(bucket).upload(filePath, file),
-    30000 // Maior timeout para upload
+    30000 
   );
 
   if (error) handleError(error, 'uploadFile');
