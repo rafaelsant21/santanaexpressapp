@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { UserSession, UserRole } from '@/services/types';
+import { withTimeout } from '@/lib/utils';
 
 interface AuthContextType {
   session: UserSession | null;
@@ -22,17 +23,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const fetchProfile = async (userId: string) => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching profile:', error);
+      try {
+        const { data, error } = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single(),
+          15000
+        );
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          return null;
+        }
+        return data;
+      } catch (err) {
+        console.error('Profile fetch failed or timed out:', err);
         return null;
       }
-      return data;
     };
 
     // Verifica sessão existente ao carregar
