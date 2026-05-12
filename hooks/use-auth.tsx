@@ -42,35 +42,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Verifica sessão existente ao carregar
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      if (s?.user) {
-        const profile = await fetchProfile(s.user.id);
-        const role = (profile?.role ?? 'motorista') as UserRole;
-        setSession({
-          id: s.user.id,
-          email: s.user.email!,
-          name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
-          role,
-          isLoggedIn: true,
-        });
-      }
-      setIsLoading(false);
-    });
+    supabase.auth.getSession()
+      .then(async ({ data: { session: s } }) => {
+        try {
+          if (s?.user) {
+            const profile = await fetchProfile(s.user.id);
+            const role = (profile?.role ?? 'motorista') as UserRole;
+            setSession({
+              id: s.user.id,
+              email: s.user.email!,
+              name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
+              role,
+              isLoggedIn: true,
+            });
+          }
+        } catch (err) {
+          console.error('Auth check error:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Session fetch error:', err);
+        setIsLoading(false);
+      });
 
     // Escuta mudanças de sessão
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
-      if (s?.user) {
-        const profile = await fetchProfile(s.user.id);
-        const role = (profile?.role ?? 'motorista') as UserRole;
-        setSession({
-          id: s.user.id,
-          email: s.user.email!,
-          name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
-          role,
-          isLoggedIn: true,
-        });
-      } else {
-        setSession(null);
+      try {
+        if (s?.user) {
+          const profile = await fetchProfile(s.user.id);
+          const role = (profile?.role ?? 'motorista') as UserRole;
+          setSession({
+            id: s.user.id,
+            email: s.user.email!,
+            name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
+            role,
+            isLoggedIn: true,
+          });
+        } else {
+          setSession(null);
+        }
+      } catch (err) {
+        console.error('Auth change error:', err);
       }
     });
 

@@ -65,8 +65,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  const initials = session.name
+  const initials = (session.name || 'U')
     .split(' ')
+    .filter(Boolean)
     .map(w => w[0])
     .join('')
     .slice(0, 2)
