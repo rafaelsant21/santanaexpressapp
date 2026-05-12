@@ -126,8 +126,8 @@ export default function CombustivelPage() {
 
       setIsModalOpen(false);
       loadData();
-    } catch (error) {
-      toast.error('Erro ao salvar registro');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar registro');
     } finally {
       setIsSubmitting(false);
     }

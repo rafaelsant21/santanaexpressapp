@@ -132,8 +132,8 @@ export default function ManutencaoPage() {
 
       setIsModalOpen(false);
       loadData();
-    } catch (error) {
-      toast.error('Erro ao salvar manutenção');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar manutenção');
     } finally {
       setIsSubmitting(false);
     }

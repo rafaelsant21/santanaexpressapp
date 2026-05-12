@@ -175,8 +175,8 @@ export default function DespesasOperacionaisPage() {
       }
       setIsModalOpen(false);
       loadData();
-    } catch {
-      toast.error('Erro ao salvar despesa');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar despesa');
     } finally {
       setIsSubmitting(false);
     }

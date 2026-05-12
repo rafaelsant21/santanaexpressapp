@@ -52,6 +52,13 @@ export function TripTimeline({ events, horaSaida, horaChegada, status }: TripTim
     items.push({ tipo: 'viagem_fim', timestamp: horaChegada });
   }
 
+  // Ordenar cronologicamente
+  items.sort((a, b) => {
+    const timeA = new Date(a.timestamp).getTime();
+    const timeB = new Date(b.timestamp).getTime();
+    return timeA - timeB;
+  });
+
   if (items.length === 0) return null;
 
   return (

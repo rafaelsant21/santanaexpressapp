@@ -16,7 +16,7 @@ const AVISO_MS = 2.5 * 60 * 60 * 1000;  // 2h30m
 const CRITICO_MS = 3 * 60 * 60 * 1000;  // 3h00m
 
 function calcTempoLiquido(
-  saidaTs: number | null,   // epoch ms — pode vir de qualquer fonte
+  saidaTs: number | null,   // epoch ms
   events: TripEvent[],
   emPausa: boolean,
   aguardandoDescarga: boolean,
@@ -24,13 +24,18 @@ function calcTempoLiquido(
   if (!saidaTs || saidaTs <= 0) return 0;
 
   const now = Date.now();
-  if (saidaTs > now) return 0;   // viagem no futuro — segurança
+  if (saidaTs > now) return 0;
+
+  // Garantir ordem cronológica dos eventos para o cálculo
+  const sortedEvents = [...events].sort((a, b) => 
+    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 
   let totalParadoMs = 0;
   let pausaInicio: number | null = null;
   let esperaInicio: number | null = null;
 
-  for (const ev of events) {
+  for (const ev of sortedEvents) {
     const ts = new Date(ev.timestamp).getTime();
     if (isNaN(ts)) continue;
 
@@ -56,22 +61,15 @@ function calcTempoLiquido(
 function parseHoraSaida(horaSaida: string | null): number | null {
   if (!horaSaida) return null;
 
-  // Já é ISO completo (ex: "2026-05-11T20:00:00Z")
-  if (horaSaida.includes('Z') || horaSaida.includes('+')) {
+  // Se já é ISO completo ou tem fuso horário
+  if (horaSaida.includes('Z') || /[\+\-]\d{2}:\d{2}$/.test(horaSaida)) {
     const t = new Date(horaSaida).getTime();
     return isNaN(t) ? null : t;
   }
 
-  // Formato "YYYY-MM-DDTHH:MM" — tratar como horário LOCAL
+  // Se for YYYY-MM-DDTHH:mm (local)
   if (horaSaida.includes('T')) {
-    // Adicionar segundos se necessário e interpretar como local
-    const parts = horaSaida.split('T');
-    const dateParts = parts[0].split('-').map(Number);
-    const timeParts = parts[1].split(':').map(Number);
-    const d = new Date(
-      dateParts[0], dateParts[1] - 1, dateParts[2],
-      timeParts[0] || 0, timeParts[1] || 0, 0
-    );
+    const d = new Date(horaSaida); // O JS interpreta como local se não houver sufixo Z
     return isNaN(d.getTime()) ? null : d.getTime();
   }
 
@@ -87,12 +85,12 @@ function formatMs(ms: number): string {
 }
 
 export function useTripTimer(
-  horaSaida: string | null,       // "YYYY-MM-DDTHH:MM" ou ISO completo
+  horaSaida: string | null,
   status: string,
   events: TripEvent[],
   emPausa: boolean,
   aguardandoDescarga: boolean,
-  createdAt?: string | null,      // fallback se hora_saida for vazio
+  createdAt?: string | null,
 ): TripTimerResult {
   const [tick, setTick] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -102,21 +100,18 @@ export function useTripTimer(
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
-    // Atualiza a cada 60 segundos
     intervalRef.current = setInterval(() => setTick(t => t + 1), 60000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [status]);
 
-  // Determinar o timestamp de saída — prioridade: horaSaida > createdAt
   let saidaTs = parseHoraSaida(horaSaida);
   if (!saidaTs && createdAt) {
     const t = new Date(createdAt).getTime();
     saidaTs = isNaN(t) ? null : t;
   }
 
-  // tick é usado só para forçar re-render no intervalo
   void tick;
 
   const tempoLiquidoMs = calcTempoLiquido(saidaTs, events, emPausa, aguardandoDescarga);

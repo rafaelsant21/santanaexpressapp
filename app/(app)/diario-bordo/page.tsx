@@ -11,7 +11,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
-import { parseBRL, getLocalDateISO, getLocalDateOnly } from '@/lib/utils';
+import { parseBRL, getLocalDateISO, getLocalDateOnly, getUTCISO } from '@/lib/utils';
 import { TripTimer } from '@/components/diario-bordo/TripTimer';
 import { TripControls } from '@/components/diario-bordo/TripControls';
 import { TripTimeline } from '@/components/diario-bordo/TripTimeline';
@@ -127,43 +127,59 @@ export default function DiarioBordoPage() {
 
   const handleIniciarPausa = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_inicio', timestamp: getLocalDateISO() });
-    const updated = await updateLogbook(selectedLog.id, { em_pausa: true });
-    setSelectedLog(updated);
-    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
-    await loadTripEvents(selectedLog.id);
-    toast.success('Parada registrada!');
+    try {
+      await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_inicio', timestamp: getUTCISO() });
+      const updated = await updateLogbook(selectedLog.id, { em_pausa: true });
+      setSelectedLog(updated);
+      setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+      await loadTripEvents(selectedLog.id);
+      toast.success('Parada registrada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao registrar parada');
+    }
   };
 
   const handleRetomarViagem = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_fim', timestamp: getLocalDateISO() });
-    const updated = await updateLogbook(selectedLog.id, { em_pausa: false, notificacao_enviada: false });
-    notifSentRef.current[selectedLog.id] = false;
-    setSelectedLog(updated);
-    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
-    await loadTripEvents(selectedLog.id);
-    toast.success('Viagem retomada!');
+    try {
+      await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_fim', timestamp: getUTCISO() });
+      const updated = await updateLogbook(selectedLog.id, { em_pausa: false, notificacao_enviada: false });
+      notifSentRef.current[selectedLog.id] = false;
+      setSelectedLog(updated);
+      setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+      await loadTripEvents(selectedLog.id);
+      toast.success('Viagem retomada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao retomar viagem');
+    }
   };
 
   const handleIniciarEspera = async (local?: string) => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_inicio', timestamp: getLocalDateISO(), local });
-    const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: true });
-    setSelectedLog(updated);
-    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
-    await loadTripEvents(selectedLog.id);
-    toast.success('Espera registrada!');
+    try {
+      await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_inicio', timestamp: getUTCISO(), local });
+      const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: true });
+      setSelectedLog(updated);
+      setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+      await loadTripEvents(selectedLog.id);
+      toast.success('Espera registrada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao iniciar espera');
+    }
   };
 
   const handleFinalizarEspera = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_fim', timestamp: getLocalDateISO() });
-    const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: false });
-    setSelectedLog(updated);
-    setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
-    await loadTripEvents(selectedLog.id);
-    toast.success('Descarga finalizada!');
+    try {
+      await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_fim', timestamp: getUTCISO() });
+      const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: false });
+      setSelectedLog(updated);
+      setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
+      await loadTripEvents(selectedLog.id);
+      toast.success('Descarga finalizada!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao finalizar espera');
+    }
   };
 
   const loadData = async () => {
@@ -250,8 +266,8 @@ export default function DiarioBordoPage() {
       }
       setIsModalOpen(false);
       loadData();
-    } catch {
-      toast.error('Erro ao salvar o Diário de Bordo');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar o Diário de Bordo');
     } finally {
       setIsSubmitting(false);
     }

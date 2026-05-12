@@ -45,3 +45,49 @@ export function getLocalDateOnly(): string {
   const offset = now.getTimezoneOffset() * 60000;
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
+
+/**
+ * Retorna a data e hora atual em formato ISO UTC (padrão banco de dados).
+ */
+export function getUTCISO(): string {
+  return new Date().toISOString();
+}
+
+/**
+ * Wrapper para promessas com timeout de segurança.
+ */
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 15000): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout>;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error('TIMEOUT_EXCEEDED'));
+    }, timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([promise, timeoutPromise]);
+    clearTimeout(timeoutHandle!);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutHandle!);
+    throw error;
+  }
+}
+
+/**
+ * Wrapper para promessas com retry automático em caso de falha.
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>, 
+  retries: number = 2, 
+  delay: number = 1000
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return withRetry(fn, retries - 1, delay * 2);
+  }
+}

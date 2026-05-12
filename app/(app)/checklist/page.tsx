@@ -185,8 +185,8 @@ export default function ChecklistPage() {
 
       setIsModalOpen(false);
       loadData();
-    } catch {
-      toast.error('Erro ao salvar checklist');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao salvar checklist');
     } finally {
       setIsSubmitting(false);
     }
