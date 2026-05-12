@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchProfile = async (userId: string) => {
       try {
-        const { data, error } = await withTimeout(
+        const { data, error } = await withTimeout<any>(
           supabase
             .from('profiles')
             .select('*')
