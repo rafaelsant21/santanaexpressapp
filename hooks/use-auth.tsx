@@ -25,11 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const fetchProfile = async (userId: string) => {
       try {
         const { data, error } = await withTimeout<any>(
-          supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single(),
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single()
+          ),
           15000
         );
         
