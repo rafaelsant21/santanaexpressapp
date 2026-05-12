@@ -4,8 +4,8 @@ import { withTimeout, withRetry } from '@/lib/utils';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
-function handleError(error: unknown, context: string): never {
-  const message = error instanceof Error ? error.message : String(error);
+function handleError(error: any, context: string): never {
+  const message = error?.message || String(error);
   console.error(`[Supabase Error] ${context}:`, error);
   throw new Error(`Erro em ${context}: ${message}`);
 }
@@ -13,11 +13,15 @@ function handleError(error: unknown, context: string): never {
 /**
  * Wrapper para chamadas Supabase com timeout e tratamento de erro centralizado.
  */
-async function call<T>(promise: PromiseLike<T>, context: string): Promise<T> {
+async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<{ data: T | null; error: any }> {
   try {
-    // Converte PromiseLike para Promise se necessário
-    const wrappedPromise = Promise.resolve(promise);
-    return await withTimeout(wrappedPromise, 15000);
+    const result = await withTimeout(Promise.resolve(promise), 15000);
+    
+    if (result?.error) {
+       handleError(result.error, context);
+    }
+    
+    return result;
   } catch (err: any) {
     if (err.message === 'TIMEOUT_EXCEEDED') {
       throw new Error(`O tempo de resposta expirou ao tentar ${context}. Verifique sua conexão.`);
@@ -31,10 +35,12 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
   const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  await call(
+  const { error } = await withTimeout(
     supabase.storage.from(bucket).upload(filePath, file),
-    `uploadFile (${bucket})`
+    30000 // Maior timeout para upload
   );
+
+  if (error) handleError(error, 'uploadFile');
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
   return data.publicUrl;
@@ -231,7 +237,7 @@ export const getChecklists = async (): Promise<Checklist[]> => {
     supabase.from('checklists').select('*').order('created_at', { ascending: false }),
     'getChecklists'
   );
-  return (data as ChecklistRow[]).map(rowToChecklist);
+  return (data as ChecklistRow[] ?? []).map(rowToChecklist);
 };
 
 export const createChecklist = async (checklist: Omit<Checklist, 'id'>): Promise<Checklist> => {
