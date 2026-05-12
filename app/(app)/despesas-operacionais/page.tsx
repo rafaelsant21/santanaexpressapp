@@ -159,6 +159,7 @@ export default function DespesasOperacionaisPage() {
 
       const payload: Omit<Expense, 'id'> = {
         ...formData,
+        user_id: session?.id,
         valor: parseBRL(formData.valor),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
@@ -436,9 +437,19 @@ export default function DespesasOperacionaisPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label>Motorista</Label>
-                <Select required value={formData.motorista} onChange={e => setFormData({ ...formData, motorista: e.target.value })}>
-                  <option value="" disabled>Selecione</option>
-                  {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+                <Select 
+                  required 
+                  value={formData.motorista} 
+                  onChange={e => setFormData({ ...formData, motorista: e.target.value })}
+                  disabled={!isAdmin}
+                >
+                  {!isAdmin && <option value={session?.name}>{session?.name}</option>}
+                  {isAdmin && (
+                    <>
+                      <option value="" disabled>Selecione</option>
+                      {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </>
+                  )}
                 </Select>
               </div>
               <div className="space-y-1">

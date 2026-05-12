@@ -88,7 +88,7 @@ export default function ManutencaoPage() {
       setEditingLog(null);
       setFormData({
         vehicle_id: vehicles[0]?.id || '',
-        motorista: '',
+        motorista: session?.name || '',
         tipo: 'preventiva',
         descricao: '',
         custo: '' as number | string,
@@ -106,6 +106,7 @@ export default function ManutencaoPage() {
     try {
       const payload: any = {
         ...formData,
+        user_id: session?.id,
         custo: parseBRL(formData.custo),
         km: parseBRL(formData.km),
         data: formData.data || new Date().toISOString().substring(0, 10),
@@ -332,11 +333,17 @@ export default function ManutencaoPage() {
               required
               value={formData.motorista}
               onChange={e => setFormData({...formData, motorista: e.target.value})}
+              disabled={!isAdmin}
             >
-              <option value="" disabled>Selecione o motorista</option>
-              {MOTORISTAS.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
+              {!isAdmin && <option value={session?.name}>{session?.name}</option>}
+              {isAdmin && (
+                <>
+                  <option value="" disabled>Selecione o motorista</option>
+                  {MOTORISTAS.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </>
+              )}
             </Select>
           </div>
           

@@ -86,7 +86,7 @@ export default function CombustivelPage() {
       setEditingLog(null);
       setFormData({
         vehicle_id: vehicles[0]?.id || '',
-        motorista: '',
+        motorista: session?.name || '',
         data: new Date().toISOString().substring(0, 10),
         litros: '' as number | string,
         valor_total: '' as number | string,
@@ -102,6 +102,7 @@ export default function CombustivelPage() {
     try {
       const payload: any = {
         ...formData,
+        user_id: session?.id,
         litros: parseBRL(formData.litros),
         valor_total: parseBRL(formData.valor_total),
         km_no_abastecimento: parseBRL(formData.km_no_abastecimento),
@@ -313,11 +314,17 @@ export default function CombustivelPage() {
               required
               value={formData.motorista}
               onChange={e => setFormData({...formData, motorista: e.target.value})}
+              disabled={!isAdmin}
             >
-              <option value="" disabled>Selecione o motorista</option>
-              {MOTORISTAS.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
+              {!isAdmin && <option value={session?.name}>{session?.name}</option>}
+              {isAdmin && (
+                <>
+                  <option value="" disabled>Selecione o motorista</option>
+                  {MOTORISTAS.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </>
+              )}
             </Select>
           </div>
           

@@ -22,6 +22,7 @@ const adminNavItems = [
   { name: 'Combustível', href: '/combustivel', icon: Fuel },
   { name: 'Manutenção', href: '/manutencao', icon: Wrench },
   { name: 'Despesas', href: '/despesas-operacionais', icon: Receipt },
+  { name: 'Usuários', href: '/usuarios', icon: User },
 ];
 
 const driverNavItems = [
@@ -58,7 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = isAdmin ? adminNavItems : driverNavItems;
 
   // Bloqueia motorista de acessar rotas restritas
-  const driverBlockedRoutes = ['/dashboard', '/frota'];
+  const driverBlockedRoutes = ['/dashboard', '/frota', '/usuarios'];
   if (!isAdmin && driverBlockedRoutes.some(r => pathname.startsWith(r))) {
     router.push('/checklist');
     return null;

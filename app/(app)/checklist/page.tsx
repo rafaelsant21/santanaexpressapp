@@ -133,7 +133,12 @@ export default function ChecklistPage() {
       });
     } else {
       setEditingLog(null);
-      setFormData({ ...DEFAULT_FORM, vehicle_id: vehicles[0]?.id || '', data: new Date().toISOString().substring(0, 16) });
+      setFormData({ 
+        ...DEFAULT_FORM, 
+        vehicle_id: vehicles[0]?.id || '', 
+        data: new Date().toISOString().substring(0, 16),
+        motorista: session?.name || '',
+      });
     }
     setIsModalOpen(true);
   };
@@ -159,6 +164,7 @@ export default function ChecklistPage() {
     try {
       const payload: any = { 
         ...formData, 
+        user_id: session?.id,
         km_atual: parseBRL(formData.km_atual),
         data: formData.data || new Date().toISOString().substring(0, 10),
       };
@@ -330,9 +336,19 @@ export default function ChecklistPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Motorista</Label>
-              <Select required value={formData.motorista} onChange={e => setFormData({ ...formData, motorista: e.target.value })}>
-                <option value="" disabled>Selecione</option>
-                {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+              <Select 
+                required 
+                value={formData.motorista} 
+                onChange={e => setFormData({ ...formData, motorista: e.target.value })}
+                disabled={!isAdmin}
+              >
+                {!isAdmin && <option value={session?.name}>{session?.name}</option>}
+                {isAdmin && (
+                  <>
+                    <option value="" disabled>Selecione</option>
+                    {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </>
+                )}
               </Select>
             </div>
             <div className="space-y-1">

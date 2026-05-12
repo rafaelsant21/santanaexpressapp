@@ -148,6 +148,7 @@ export const deleteMaintenance = async (id: string): Promise<void> => {
 type ChecklistRow = {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   data: string;
   motorista: string;
   km_atual: number;
@@ -178,6 +179,7 @@ function rowToChecklist(row: ChecklistRow): Checklist {
   return {
     id: row.id,
     vehicle_id: row.vehicle_id,
+    user_id: row.user_id,
     data: row.data,
     motorista: row.motorista,
     km_atual: row.km_atual,
@@ -206,6 +208,7 @@ function rowToChecklist(row: ChecklistRow): Checklist {
 function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
   return {
     vehicle_id: c.vehicle_id,
+    user_id: c.user_id,
     data: c.data,
     motorista: c.motorista,
     km_atual: c.km_atual,
@@ -254,6 +257,7 @@ export const createChecklist = async (checklist: Omit<Checklist, 'id'>): Promise
 export const updateChecklist = async (id: string, updates: Partial<Checklist>): Promise<Checklist> => {
   const flat: Partial<ChecklistRow> = {
     vehicle_id: updates.vehicle_id,
+    user_id: updates.user_id,
     data: updates.data,
     motorista: updates.motorista,
     km_atual: updates.km_atual,
@@ -394,4 +398,28 @@ export const createTripEvent = async (event: Omit<TripEvent, 'id' | 'created_at'
 export const deleteTripEvent = async (id: string): Promise<void> => {
   const { error } = await supabase.from('trip_events').delete().eq('id', id);
   if (error) handleError(error, 'deleteTripEvent');
+};
+
+// ─── PERFIS (USUÁRIOS) ────────────────────────────────────────────────────────
+
+export const getProfiles = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) handleError(error, 'getProfiles');
+  return data;
+};
+
+export const updateProfileRole = async (id: string, role: 'admin' | 'motorista') => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) handleError(error, 'updateProfileRole');
+  return data;
 };

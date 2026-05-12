@@ -197,6 +197,7 @@ export default function DiarioBordoPage() {
         ...DEFAULT_FORM,
         vehicle_id: vehicles[0]?.id || '',
         data_saida: new Date().toISOString().substring(0, 10),
+        motorista: session?.name || '',
       });
     }
     setIsModalOpen(true);
@@ -228,6 +229,7 @@ export default function DiarioBordoPage() {
     try {
       const payload: any = {
         ...formData,
+        user_id: session?.id,
         km_inicial: parseBRL(formData.km_inicial),
         km_final: parseBRL(formData.km_final),
         valor_abastecido: parseBRL(formData.valor_abastecido),
@@ -530,9 +532,19 @@ export default function DiarioBordoPage() {
               </div>
               <div className="space-y-2">
                 <Label>Motorista</Label>
-                <Select required value={formData.motorista} onChange={e => setFormData({...formData, motorista: e.target.value})}>
-                  <option value="" disabled>Selecione o motorista</option>
-                  {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+                <Select 
+                  required 
+                  value={formData.motorista} 
+                  onChange={e => setFormData({...formData, motorista: e.target.value})}
+                  disabled={!isAdmin}
+                >
+                  {!isAdmin && <option value={session?.name}>{session?.name}</option>}
+                  {isAdmin && (
+                    <>
+                      <option value="" disabled>Selecione o motorista</option>
+                      {MOTORISTAS.map(m => <option key={m} value={m}>{m}</option>)}
+                    </>
+                  )}
                 </Select>
               </div>
             </div>

@@ -21,13 +21,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    const fetchProfile = async (userId: string) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    };
+
     // Verifica sessão existente ao carregar
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       if (s?.user) {
-        const role = (s.user.user_metadata?.role ?? 'driver') as UserRole;
+        const profile = await fetchProfile(s.user.id);
+        const role = (profile?.role ?? 'motorista') as UserRole;
         setSession({
+          id: s.user.id,
           email: s.user.email!,
-          name: s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
+          name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
           role,
           isLoggedIn: true,
         });
@@ -35,13 +51,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     });
 
-    // Escuta mudanças de sessão (login/logout em outras abas)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    // Escuta mudanças de sessão
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
       if (s?.user) {
-        const role = (s.user.user_metadata?.role ?? 'driver') as UserRole;
+        const profile = await fetchProfile(s.user.id);
+        const role = (profile?.role ?? 'motorista') as UserRole;
         setSession({
+          id: s.user.id,
           email: s.user.email!,
-          name: s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
+          name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
           role,
           isLoggedIn: true,
         });

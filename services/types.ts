@@ -13,6 +13,7 @@ export interface Vehicle {
 export interface FuelLog {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   motorista: string;
   data: string;
   litros: number;
@@ -26,6 +27,7 @@ export type MaintenanceStatus = 'pendente' | 'concluída';
 export interface Maintenance {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   motorista: string;
   tipo: MaintenanceType;
   descricao: string;
@@ -40,6 +42,7 @@ export type TipoViagem = 'Entrega' | 'Coleta' | 'Transferência';
 export interface Checklist {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   data: string;
   motorista: string;
   km_atual: number;
@@ -71,6 +74,7 @@ export interface Checklist {
 export interface Logbook {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   motorista: string;
   tipo_viagem: TipoViagem;
   cidade_origem: string;
@@ -113,9 +117,10 @@ export interface TripEvent {
   created_at?: string;
 }
 
-export type UserRole = 'admin' | 'driver';
+export type UserRole = 'admin' | 'motorista';
 
 export interface UserSession {
+  id: string;
   email: string;
   name: string;
   role: UserRole;
@@ -152,6 +157,7 @@ export type ExpenseStatus =
 export interface Expense {
   id: string;
   vehicle_id: string;
+  user_id?: string;
   motorista: string;
   data: string;
   hora: string;
