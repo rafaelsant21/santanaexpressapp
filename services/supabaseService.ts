@@ -10,21 +10,28 @@ function handleError(error: unknown, context: string): never {
   throw new Error(`Erro em ${context}: ${message}`);
 }
 
-// Wrapper padrão para todas as chamadas Supabase com timeout de 15s
-const call = <T>(promise: Promise<T>, context: string) => 
-  withTimeout(promise, 15000).catch(err => {
+/**
+ * Wrapper para chamadas Supabase com timeout e tratamento de erro centralizado.
+ */
+async function call<T>(promise: PromiseLike<T>, context: string): Promise<T> {
+  try {
+    // Converte PromiseLike para Promise se necessário
+    const wrappedPromise = Promise.resolve(promise);
+    return await withTimeout(wrappedPromise, 15000);
+  } catch (err: any) {
     if (err.message === 'TIMEOUT_EXCEEDED') {
       throw new Error(`O tempo de resposta expirou ao tentar ${context}. Verifique sua conexão.`);
     }
     handleError(err, context);
-  });
+  }
+}
 
 export const uploadFile = async (bucket: string, file: File): Promise<string> => {
   const fileExt = file.name.split('.').pop();
   const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
   const filePath = `${fileName}`;
 
-  const { error: uploadError } = await call(
+  await call(
     supabase.storage.from(bucket).upload(filePath, file),
     `uploadFile (${bucket})`
   );
@@ -77,7 +84,6 @@ export const getFuelLogs = async (): Promise<FuelLog[]> => {
 };
 
 export const createFuelLog = async (log: Omit<FuelLog, 'id'>): Promise<FuelLog> => {
-  // Abastecimento tem Retry automático por ser crítico e apresentar erro intermitente
   return withRetry(async () => {
     const { data } = await call(
       supabase.from('fuel_logs').insert([log]).select().single(),
