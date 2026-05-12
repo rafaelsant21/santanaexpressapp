@@ -36,7 +36,7 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 // ─── VEÍCULOS ────────────────────────────────────────────────────────────────
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
-  const { data, error } = await call(
+  const { data } = await call(
     supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
     'getVehicles'
   );
@@ -44,7 +44,7 @@ export const getVehicles = async (): Promise<Vehicle[]> => {
 };
 
 export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehicle> => {
-  const { data, error } = await call(
+  const { data } = await call(
     supabase.from('vehicles').insert([vehicle]).select().single(),
     'createVehicle'
   );
@@ -52,7 +52,7 @@ export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehic
 };
 
 export const updateVehicle = async (id: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
-  const { data, error } = await call(
+  const { data } = await call(
     supabase.from('vehicles').update(updates).eq('id', id).select().single(),
     'updateVehicle'
   );
@@ -79,7 +79,7 @@ export const getFuelLogs = async (): Promise<FuelLog[]> => {
 export const createFuelLog = async (log: Omit<FuelLog, 'id'>): Promise<FuelLog> => {
   // Abastecimento tem Retry automático por ser crítico e apresentar erro intermitente
   return withRetry(async () => {
-    const { data, error } = await call(
+    const { data } = await call(
       supabase.from('fuel_logs').insert([log]).select().single(),
       'createFuelLog'
     );
@@ -126,6 +126,13 @@ export const updateMaintenance = async (id: string, updates: Partial<Maintenance
     'updateMaintenance'
   );
   return data as Maintenance;
+};
+
+export const deleteMaintenance = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('maintenances').delete().eq('id', id),
+    'deleteMaintenance'
+  );
 };
 
 // ─── CHECKLISTS ──────────────────────────────────────────────────────────────
@@ -243,6 +250,20 @@ export const updateChecklist = async (id: string, updates: Partial<Checklist>): 
   return rowToChecklist(data as ChecklistRow);
 };
 
+export const deleteChecklist = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('checklists').delete().eq('id', id),
+    'deleteChecklist'
+  );
+};
+
+export const marcarAvisoRevisado = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('checklists').update({ aviso_revisado: true }).eq('id', id),
+    'marcarAvisoRevisado'
+  );
+};
+
 // ─── DIÁRIO DE BORDO ──────────────────────────────────────────────────────────
 
 export const getLogbooks = async (): Promise<Logbook[]> => {
@@ -269,6 +290,13 @@ export const updateLogbook = async (id: string, updates: Partial<Logbook>): Prom
   return data as Logbook;
 };
 
+export const deleteLogbook = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('logbooks').delete().eq('id', id),
+    'deleteLogbook'
+  );
+};
+
 // ─── DESPESAS OPERACIONAIS ───────────────────────────────────────────────────
 
 export const getExpenses = async (): Promise<Expense[]> => {
@@ -285,6 +313,21 @@ export const createExpense = async (expense: Omit<Expense, 'id'>): Promise<Expen
     'createExpense'
   );
   return data as Expense;
+};
+
+export const updateExpense = async (id: string, updates: Partial<Expense>): Promise<Expense> => {
+  const { data } = await call(
+    supabase.from('expenses').update(updates).eq('id', id).select().single(),
+    'updateExpense'
+  );
+  return data as Expense;
+};
+
+export const deleteExpense = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('expenses').delete().eq('id', id),
+    'deleteExpense'
+  );
 };
 
 // ─── EVENTOS DE VIAGEM (PAUSAS / ESPERAS) ────────────────────────────────────
@@ -305,6 +348,13 @@ export const createTripEvent = async (event: Omit<TripEvent, 'id' | 'created_at'
     );
     return data as TripEvent;
   }, 2);
+};
+
+export const deleteTripEvent = async (id: string): Promise<void> => {
+  await call(
+    supabase.from('trip_events').delete().eq('id', id),
+    'deleteTripEvent'
+  );
 };
 
 // ─── PERFIS (USUÁRIOS) ────────────────────────────────────────────────────────
