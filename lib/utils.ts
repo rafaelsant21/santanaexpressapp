@@ -25,3 +25,23 @@ export function formatBRL(value: number): string {
     maximumFractionDigits: 2,
   });
 }
+
+/**
+ * Retorna a data e hora atual formatada para inputs (YYYY-MM-DDTHH:mm)
+ * ajustada para o fuso horário local.
+ */
+export function getLocalDateISO(): string {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 16);
+}
+
+/**
+ * Retorna apenas a data atual formatada para inputs (YYYY-MM-DD)
+ * ajustada para o fuso horário local.
+ */
+export function getLocalDateOnly(): string {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}

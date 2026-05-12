@@ -10,7 +10,7 @@ import { FileUpload } from '@/components/ui/FileUpload';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
-import { parseBRL } from '@/lib/utils';
+import { parseBRL, getLocalDateISO } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_VIAGEM: TipoViagem[] = ['Entrega', 'Coleta', 'Transferência'];
@@ -36,7 +36,7 @@ interface ChecklistFormData {
 
 const DEFAULT_FORM: ChecklistFormData = {
   vehicle_id: '',
-  data: new Date().toISOString().substring(0, 16),
+  data: getLocalDateISO(),
   motorista: '',
   km_atual: '',
   tipo_viagem: 'Entrega',
@@ -136,7 +136,7 @@ export default function ChecklistPage() {
       setFormData({ 
         ...DEFAULT_FORM, 
         vehicle_id: vehicles[0]?.id || '', 
-        data: new Date().toISOString().substring(0, 16),
+        data: getLocalDateISO(),
         motorista: session?.name || '',
       });
     }

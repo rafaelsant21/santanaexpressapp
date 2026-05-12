@@ -28,7 +28,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
-import { parseBRL } from '@/lib/utils';
+import { parseBRL, getLocalDateISO, getLocalDateOnly } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_DESPESA: ExpenseType[] = [
@@ -77,8 +77,8 @@ interface ExpenseFormData {
 const DEFAULT_FORM: ExpenseFormData = {
   vehicle_id: '',
   motorista: '',
-  data: new Date().toISOString().substring(0, 10),
-  hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+  data: getLocalDateOnly(),
+  hora: getLocalDateISO().split('T')[1],
   tipo: 'Outros',
   valor: '',
   forma_pagamento: 'Dinheiro',
@@ -134,7 +134,9 @@ export default function DespesasOperacionaisPage() {
       setFormData({ 
         ...DEFAULT_FORM, 
         vehicle_id: vehicles[0]?.id || '',
-        motorista: session?.name || ''
+        motorista: session?.name || '',
+        data: getLocalDateOnly(),
+        hora: getLocalDateISO().split('T')[1]
       });
     }
     setIsModalOpen(true);

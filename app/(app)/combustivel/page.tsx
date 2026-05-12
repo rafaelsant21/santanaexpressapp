@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
-import { parseBRL } from '@/lib/utils';
+import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 
@@ -26,7 +26,7 @@ export default function CombustivelPage() {
   const [formData, setFormData] = useState<any>({
     vehicle_id: '',
     motorista: '',
-    data: new Date().toISOString().substring(0, 10),
+    data: getLocalDateOnly(),
     litros: '' as number | string,
     valor_total: '' as number | string,
     km_no_abastecimento: '' as number | string
@@ -38,7 +38,7 @@ export default function CombustivelPage() {
 
   // Filtro de mês — padrão: mês atual
   const [mesFilter, setMesFilter] = useState<string>(
-    () => new Date().toISOString().substring(0, 7)
+    () => getLocalDateOnly().substring(0, 7)
   );
 
   // Mêses disponíveis nos dados
@@ -87,7 +87,7 @@ export default function CombustivelPage() {
       setFormData({
         vehicle_id: vehicles[0]?.id || '',
         motorista: session?.name || '',
-        data: new Date().toISOString().substring(0, 10),
+        data: getLocalDateOnly(),
         litros: '' as number | string,
         valor_total: '' as number | string,
         km_no_abastecimento: '' as number | string

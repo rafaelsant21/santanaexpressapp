@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 
-import { parseBRL } from '@/lib/utils';
+import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 
@@ -29,7 +29,7 @@ export default function ManutencaoPage() {
     tipo: 'preventiva' as MaintenanceType,
     descricao: '',
     custo: '' as number | string,
-    data: new Date().toISOString().substring(0, 10),
+    data: getLocalDateOnly(),
     km: '' as number | string,
     status: 'pendente' as MaintenanceStatus
   });
@@ -40,7 +40,7 @@ export default function ManutencaoPage() {
 
   // Filtro de mês — padrão: mês atual
   const [mesFilter, setMesFilter] = useState<string>(
-    () => new Date().toISOString().substring(0, 7)
+    () => getLocalDateOnly().substring(0, 7)
   );
 
   const mesesDisponiveis = useMemo(() => {
@@ -92,7 +92,7 @@ export default function ManutencaoPage() {
         tipo: 'preventiva',
         descricao: '',
         custo: '' as number | string,
-        data: new Date().toISOString().substring(0, 10),
+        data: getLocalDateOnly(),
         km: '' as number | string,
         status: 'pendente'
       });

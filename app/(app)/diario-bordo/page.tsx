@@ -11,7 +11,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
-import { parseBRL } from '@/lib/utils';
+import { parseBRL, getLocalDateISO, getLocalDateOnly } from '@/lib/utils';
 import { TripTimer } from '@/components/diario-bordo/TripTimer';
 import { TripControls } from '@/components/diario-bordo/TripControls';
 import { TripTimeline } from '@/components/diario-bordo/TripTimeline';
@@ -28,8 +28,8 @@ const DEFAULT_FORM: any = {
   tipo_viagem: 'Entrega',
   cidade_origem: '',
   cidade_destino: '',
-  data_saida: new Date().toISOString().substring(0, 10),
-  hora_saida: '',
+  data_saida: getLocalDateOnly(),
+  hora_saida: getLocalDateISO().split('T')[1],
   data_chegada: '',
   hora_chegada: '',
   km_inicial: '' as number | string,
@@ -127,7 +127,7 @@ export default function DiarioBordoPage() {
 
   const handleIniciarPausa = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_inicio', timestamp: new Date().toISOString() });
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_inicio', timestamp: getLocalDateISO() });
     const updated = await updateLogbook(selectedLog.id, { em_pausa: true });
     setSelectedLog(updated);
     setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -137,7 +137,7 @@ export default function DiarioBordoPage() {
 
   const handleRetomarViagem = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_fim', timestamp: new Date().toISOString() });
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'pausa_fim', timestamp: getLocalDateISO() });
     const updated = await updateLogbook(selectedLog.id, { em_pausa: false, notificacao_enviada: false });
     notifSentRef.current[selectedLog.id] = false;
     setSelectedLog(updated);
@@ -148,7 +148,7 @@ export default function DiarioBordoPage() {
 
   const handleIniciarEspera = async (local?: string) => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_inicio', timestamp: new Date().toISOString(), local });
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_inicio', timestamp: getLocalDateISO(), local });
     const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: true });
     setSelectedLog(updated);
     setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -158,7 +158,7 @@ export default function DiarioBordoPage() {
 
   const handleFinalizarEspera = async () => {
     if (!selectedLog) return;
-    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_fim', timestamp: new Date().toISOString() });
+    await createTripEvent({ logbook_id: selectedLog.id, tipo: 'espera_fim', timestamp: getLocalDateISO() });
     const updated = await updateLogbook(selectedLog.id, { aguardando_descarga: false });
     setSelectedLog(updated);
     setLogs(prev => prev.map(l => l.id === updated.id ? updated : l));
@@ -196,7 +196,8 @@ export default function DiarioBordoPage() {
       setFormData({
         ...DEFAULT_FORM,
         vehicle_id: vehicles[0]?.id || '',
-        data_saida: new Date().toISOString().substring(0, 10),
+        data_saida: getLocalDateOnly(),
+        hora_saida: getLocalDateISO().split('T')[1],
         motorista: session?.name || '',
       });
     }
