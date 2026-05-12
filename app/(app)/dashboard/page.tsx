@@ -336,11 +336,20 @@ export default function DashboardPage() {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: '#94a3b8', fontSize: 10 }}
-                    tickFormatter={(v) => `R$ ${v/1000}k`}
+                    width={70}
+                    tickFormatter={(v) => {
+                      if (v === 0) return 'R$ 0';
+                      if (v >= 1000000) return `R$ ${(v/1000000).toFixed(1)}M`;
+                      if (v >= 1000) return `R$ ${(v/1000).toFixed(1)}k`;
+                      return `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                    }}
                   />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }}
                     itemStyle={{ fontSize: '12px' }}
+                    formatter={(value: number) => [
+                      `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    ]}
                   />
                   <Area type="monotone" dataKey="Combustível" stroke="#ef4444" fillOpacity={1} fill="url(#colorF)" strokeWidth={3} />
                   <Area type="monotone" dataKey="Manutenção" stroke="#3b82f6" fillOpacity={1} fill="url(#colorM)" strokeWidth={3} />
