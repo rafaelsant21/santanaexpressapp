@@ -1,6 +1,17 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { 
+  Truck, 
+  Wrench, 
+  Fuel, 
+  AlertTriangle, 
+  Loader2, 
+  Bell, 
+  X, 
+  DollarSign, 
+  Activity, 
+  Clock,
   Receipt,
   User,
   CheckSquare
