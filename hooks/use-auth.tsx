@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single() as any, 10000);
+          .single(), 10000) as any;
         
         if (error) {
           console.error('Error fetching profile:', error);
@@ -43,8 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Verifica sessão existente ao carregar
     console.log('[Auth] Checking session...');
-    withTimeout(supabase.auth.getSession(), 10000)
-      .then(async ({ data: { session: s } }) => {
+    (withTimeout(supabase.auth.getSession(), 10000) as any)
+      .then(async ({ data: { session: s } }: any) => {
         console.log('[Auth] Session data:', s?.user?.email || 'no session');
         try {
           if (s?.user) {
