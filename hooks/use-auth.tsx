@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsLoading(false);
         }
       })
-      .catch(err => {
+      .catch((err: any) => {
         console.error('[Auth] Session fetch error:', err);
         setIsLoading(false);
       });
