@@ -146,8 +146,8 @@ export default function ManutencaoPage() {
       await deleteMaintenance(id);
       toast.success('Registro excluído');
       loadData();
-    } catch (error) {
-      toast.error('Erro ao excluir registro');
+    } catch (error: any) {
+      toast.error(`Erro ao excluir: ${error.message}`);
     }
   };
 

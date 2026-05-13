@@ -5,17 +5,24 @@ import { withRetry, withTimeout } from '@/lib/utils';
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 function handleError(error: any, context: string): never {
-  const message = error?.message || String(error);
+  const message = error?.message || error?.details || String(error);
   console.error(`[Supabase Error] ${context}:`, error);
   throw new Error(`Erro em ${context}: ${message}`);
 }
 
+// Cache simples
+let vehiclesCache: { data: Vehicle[], timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 /**
  * Versão simplificada sem Promise.race/timeout para garantir que nada bloqueie.
  */
-async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<T> {
+async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string, timeoutMs: number = 15000): Promise<T> {
   try {
-    const { data, error } = await withTimeout(Promise.resolve(promise), 15000);
+    const { data, error } = timeoutMs > 0 
+      ? await withTimeout(Promise.resolve(promise), timeoutMs)
+      : await Promise.resolve(promise);
+      
     if (error) handleError(error, context);
     if (data === null) {
         if (context.toLowerCase().includes('get')) return [] as any;
@@ -24,7 +31,7 @@ async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, con
     return data as T;
   } catch (error: any) {
     if (error.message === 'TIMEOUT_EXCEEDED') {
-      console.error(`[Timeout] ${context} demorou mais de 15s`);
+      console.error(`[Timeout] ${context} demorou mais de ${timeoutMs}ms`);
       if (context.toLowerCase().includes('get')) return [] as any;
     }
     throw error;
@@ -46,10 +53,15 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 // ─── VEÍCULOS ────────────────────────────────────────────────────────────────
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
-  return call<Vehicle[]>(
+  if (vehiclesCache && (Date.now() - vehiclesCache.timestamp < CACHE_TTL)) {
+    return vehiclesCache.data;
+  }
+  const data = await call<Vehicle[]>(
     supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
     'getVehicles'
   );
+  vehiclesCache = { data, timestamp: Date.now() };
+  return data;
 };
 
 export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehicle> => {
@@ -101,7 +113,8 @@ export const updateFuelLog = async (id: string, updates: Partial<FuelLog>): Prom
 export const deleteFuelLog = async (id: string): Promise<void> => {
   await call(
     supabase.from('fuel_logs').delete().eq('id', id),
-    'deleteFuelLog'
+    'deleteFuelLog',
+    0
   );
 };
 
@@ -131,7 +144,8 @@ export const updateMaintenance = async (id: string, updates: Partial<Maintenance
 export const deleteMaintenance = async (id: string): Promise<void> => {
   await call(
     supabase.from('maintenances').delete().eq('id', id),
-    'deleteMaintenance'
+    'deleteMaintenance',
+    0 // Sem timeout para delete
   );
 };
 
@@ -253,7 +267,8 @@ export const updateChecklist = async (id: string, updates: Partial<Checklist>): 
 export const deleteChecklist = async (id: string): Promise<void> => {
   await call(
     supabase.from('checklists').delete().eq('id', id),
-    'deleteChecklist'
+    'deleteChecklist',
+    0
   );
 };
 
@@ -287,7 +302,8 @@ export const updateLogbook = async (id: string, updates: Partial<Logbook>): Prom
 export const deleteLogbook = async (id: string): Promise<void> => {
   await call(
     supabase.from('logbooks').delete().eq('id', id),
-    'deleteLogbook'
+    'deleteLogbook',
+    0
   );
 };
 
@@ -317,7 +333,8 @@ export const updateExpense = async (id: string, updates: Partial<Expense>): Prom
 export const deleteExpense = async (id: string): Promise<void> => {
   await call(
     supabase.from('expenses').delete().eq('id', id),
-    'deleteExpense'
+    'deleteExpense',
+    0
   );
 };
 
