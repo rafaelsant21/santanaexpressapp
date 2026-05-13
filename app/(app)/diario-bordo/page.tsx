@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon, Bell } from 'lucide-react';
+import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon, Bell, Search } from 'lucide-react';
+import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook, getTripEvents, createTripEvent } from '@/services/supabaseService';
 import { Vehicle, Logbook, TipoViagem, TripEvent } from '@/services/types';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -542,10 +543,12 @@ export default function DiarioBordoPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Veículo</Label>
-                <Select required value={formData.vehicle_id} onChange={e => setFormData({...formData, vehicle_id: e.target.value})}>
-                  <option value="" disabled>Selecione um veículo</option>
-                  {vehicles.map(v => <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>)}
-                </Select>
+                <VehicleSelect 
+                  vehicles={vehicles} 
+                  value={formData.vehicle_id} 
+                  onChange={val => setFormData({ ...formData, vehicle_id: val })} 
+                  required 
+                />
               </div>
               <div className="space-y-2">
                 <Label>Motorista</Label>

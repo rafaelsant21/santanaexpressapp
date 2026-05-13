@@ -214,7 +214,7 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
 
 export const getChecklists = async (): Promise<Checklist[]> => {
   const data = await call<ChecklistRow[]>(
-    supabase.from('checklists').select('*').order('created_at', { ascending: false }).limit(50),
+    supabase.from('checklists').select('*').order('created_at', { ascending: false }),
     'getChecklists'
   );
   return (data ?? []).map(rowToChecklist);
@@ -257,7 +257,7 @@ export const marcarAvisoRevisado = async (id: string): Promise<void> => {
 
 export const getLogbooks = async (): Promise<Logbook[]> => {
   return call<Logbook[]>(
-    supabase.from('logbooks').select('*').order('created_at', { ascending: false }).limit(50),
+    supabase.from('logbooks').select('*').order('created_at', { ascending: false }),
     'getLogbooks'
   );
 };
@@ -287,7 +287,7 @@ export const deleteLogbook = async (id: string): Promise<void> => {
 
 export const getExpenses = async (): Promise<Expense[]> => {
   return call<Expense[]>(
-    supabase.from('expenses').select('*').order('data', { ascending: false }).limit(50),
+    supabase.from('expenses').select('*').order('data', { ascending: false }),
     'getExpenses'
   );
 };

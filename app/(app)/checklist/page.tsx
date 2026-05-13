@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
+import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon, Search } from 'lucide-react';
+import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getChecklists, createChecklist, updateChecklist, deleteChecklist, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, Checklist, TipoViagem } from '@/services/types';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -321,10 +322,12 @@ export default function ChecklistPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Veículo</Label>
-              <Select required value={formData.vehicle_id} onChange={e => setFormData({ ...formData, vehicle_id: e.target.value })}>
-                <option value="" disabled>Selecione</option>
-                {vehicles.map(v => <option key={v.id} value={v.id}>{v.placa} — {v.modelo}</option>)}
-              </Select>
+              <VehicleSelect 
+                vehicles={vehicles} 
+                value={formData.vehicle_id} 
+                onChange={val => setFormData({ ...formData, vehicle_id: val })} 
+                required 
+              />
             </div>
             <div className="space-y-1">
               <Label>Data e Hora</Label>

@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Truck
 } from 'lucide-react';
+import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getExpenses, createExpense, updateExpense, deleteExpense } from '@/services/supabaseService';
 import { Vehicle, Expense, ExpenseType, PaymentMethod, ExpenseStatus } from '@/services/types';
 import { FileUpload } from '@/components/ui/FileUpload';
@@ -456,10 +457,12 @@ export default function DespesasOperacionaisPage() {
               </div>
               <div className="space-y-1">
                 <Label>Veículo</Label>
-                <Select required value={formData.vehicle_id} onChange={e => setFormData({ ...formData, vehicle_id: e.target.value })}>
-                  <option value="" disabled>Selecione</option>
-                  {vehicles.map(v => <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>)}
-                </Select>
+                <VehicleSelect 
+                  vehicles={vehicles} 
+                  value={formData.vehicle_id} 
+                  onChange={val => setFormData({ ...formData, vehicle_id: val })} 
+                  required 
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

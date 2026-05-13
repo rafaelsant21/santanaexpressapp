@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { Fuel, Plus, Edit, Trash2, Loader2, FileDown } from 'lucide-react';
+import { Fuel, Plus, Edit, Trash2, Loader2, FileDown, Search } from 'lucide-react';
+import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getFuelLogs, createFuelLog, updateFuelLog, deleteFuelLog, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, FuelLog } from '@/services/types';
 import { exportToExcel } from '@/lib/exportExcel';
@@ -296,16 +297,12 @@ export default function CombustivelPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Veículo</Label>
-            <Select 
-              required
+            <VehicleSelect 
+              vehicles={vehicles} 
               value={formData.vehicle_id} 
-              onChange={e => setFormData({...formData, vehicle_id: e.target.value})}
-            >
-              <option value="" disabled>Selecione um veículo</option>
-              {vehicles.map(v => (
-                <option key={v.id} value={v.id}>{v.placa} - {v.modelo}</option>
-              ))}
-            </Select>
+              onChange={val => setFormData({ ...formData, vehicle_id: val })} 
+              required 
+            />
           </div>
 
           <div className="space-y-2">
