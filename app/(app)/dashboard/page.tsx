@@ -171,11 +171,11 @@ export default function DashboardPage() {
   // Atividades recentes combinadas
   const recentActivities = useMemo(() => {
     const all = [
-      ...fuelLogs.map(l => ({ ...l, type: 'abastecimento', timestamp: new Date(l.data).getTime() })),
-      ...maintenances.map(m => ({ ...m, type: 'manutencao', timestamp: new Date(m.data).getTime() })),
-      ...checklists.map(c => ({ ...c, type: 'checklist', timestamp: new Date(c.data).getTime() })),
-      ...logbooks.map(l => ({ ...l, type: 'viagem', timestamp: new Date(l.data_saida || '').getTime() })),
-      ...expenses.map(e => ({ ...e, type: 'despesa', timestamp: new Date(e.data).getTime() })),
+      ...fuelLogs.map(l => ({ ...l, type: 'abastecimento', timestamp: l.data ? new Date(l.data).getTime() : 0 })),
+      ...maintenances.map(m => ({ ...m, type: 'manutencao', timestamp: m.data ? new Date(m.data).getTime() : 0 })),
+      ...checklists.map(c => ({ ...c, type: 'checklist', timestamp: c.data ? new Date(c.data).getTime() : 0 })),
+      ...logbooks.map(l => ({ ...l, type: 'viagem', timestamp: l.data_saida ? new Date(l.data_saida).getTime() : 0 })),
+      ...expenses.map(e => ({ ...e, type: 'despesa', timestamp: e.data ? new Date(e.data).getTime() : 0 })),
     ].sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
     return all;
   }, [fuelLogs, maintenances, checklists, logbooks, expenses]);

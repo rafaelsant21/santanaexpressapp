@@ -24,11 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchProfile = async (userId: string) => {
       try {
-        const { data, error } = await (supabase
+        const { data, error } = await withTimeout(supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single() as any);
+          .single() as any, 10000);
         
         if (error) {
           console.error('Error fetching profile:', error);
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Verifica sessão existente ao carregar
     console.log('[Auth] Checking session...');
-    supabase.auth.getSession()
+    withTimeout(supabase.auth.getSession(), 10000)
       .then(async ({ data: { session: s } }) => {
         console.log('[Auth] Session data:', s?.user?.email || 'no session');
         try {

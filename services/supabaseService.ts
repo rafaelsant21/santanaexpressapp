@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent } from './types';
-import { withRetry } from '@/lib/utils';
+import { withRetry, withTimeout } from '@/lib/utils';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
@@ -14,13 +14,21 @@ function handleError(error: any, context: string): never {
  * Versão simplificada sem Promise.race/timeout para garantir que nada bloqueie.
  */
 async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string): Promise<T> {
-  const { data, error } = await Promise.resolve(promise);
-  if (error) handleError(error, context);
-  if (data === null) {
+  try {
+    const { data, error } = await withTimeout(Promise.resolve(promise), 15000);
+    if (error) handleError(error, context);
+    if (data === null) {
+        if (context.toLowerCase().includes('get')) return [] as any;
+        throw new Error(`Nenhum dado retornado em ${context}`);
+    }
+    return data as T;
+  } catch (error: any) {
+    if (error.message === 'TIMEOUT_EXCEEDED') {
+      console.error(`[Timeout] ${context} demorou mais de 15s`);
       if (context.toLowerCase().includes('get')) return [] as any;
-      throw new Error(`Nenhum dado retornado em ${context}`);
+    }
+    throw error;
   }
-  return data as T;
 }
 
 export const uploadFile = async (bucket: string, file: File): Promise<string> => {
@@ -214,7 +222,7 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
 
 export const getChecklists = async (): Promise<Checklist[]> => {
   const data = await call<ChecklistRow[]>(
-    supabase.from('checklists').select('*').order('created_at', { ascending: false }),
+    supabase.from('checklists').select('*').order('created_at', { ascending: false }).limit(200),
     'getChecklists'
   );
   return (data ?? []).map(rowToChecklist);
@@ -257,7 +265,7 @@ export const marcarAvisoRevisado = async (id: string): Promise<void> => {
 
 export const getLogbooks = async (): Promise<Logbook[]> => {
   return call<Logbook[]>(
-    supabase.from('logbooks').select('*').order('created_at', { ascending: false }),
+    supabase.from('logbooks').select('*').order('created_at', { ascending: false }).limit(200),
     'getLogbooks'
   );
 };
@@ -287,7 +295,7 @@ export const deleteLogbook = async (id: string): Promise<void> => {
 
 export const getExpenses = async (): Promise<Expense[]> => {
   return call<Expense[]>(
-    supabase.from('expenses').select('*').order('data', { ascending: false }),
+    supabase.from('expenses').select('*').order('data', { ascending: false }).limit(200),
     'getExpenses'
   );
 };
