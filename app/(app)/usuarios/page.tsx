@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/modal';
 import { Button, Select, Label } from '@/components/ui/forms';
 import { User, Shield, ShieldAlert, Loader2, Search } from 'lucide-react';

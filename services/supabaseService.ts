@@ -1,42 +1,113 @@
 import { supabase } from '../lib/supabase';
 import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent } from './types';
-import { withRetry, withTimeout } from '@/lib/utils';
+import { withRetry, warnLog, devLog } from '@/lib/utils';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 
 function handleError(error: any, context: string): never {
   const message = error?.message || error?.details || String(error);
-  console.error(`[Supabase Error] ${context}:`, error);
+  warnLog('Supabase Error', `${context}: ${message}`);
   throw new Error(`Erro em ${context}: ${message}`);
 }
 
-// Cache simples
-let vehiclesCache: { data: Vehicle[], timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+// ─── CACHE SYSTEM ───────────────────────────────────────────────────────────
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutos
+
+const cache: {
+  vehicles: CacheEntry<Vehicle[]> | null;
+  fuelLogs: CacheEntry<FuelLog[]> | null;
+  maintenances: CacheEntry<Maintenance[]> | null;
+  checklists: CacheEntry<Checklist[]> | null;
+  logbooks: CacheEntry<Logbook[]> | null;
+  expenses: CacheEntry<Expense[]> | null;
+  profiles: CacheEntry<any[]> | null;
+} = {
+  vehicles: null,
+  fuelLogs: null,
+  maintenances: null,
+  checklists: null,
+  logbooks: null,
+  expenses: null,
+  profiles: null,
+};
+
+type CacheKey = keyof typeof cache;
+
+function getCached<T>(key: CacheKey): T | null {
+  const entry = cache[key];
+  if (entry && (Date.now() - entry.timestamp < CACHE_TTL)) {
+    devLog('Cache', `Hit: ${key}`);
+    return entry.data as T;
+  }
+  return null;
+}
+
+function setCache<T>(key: CacheKey, data: T): void {
+  (cache as any)[key] = { data, timestamp: Date.now() };
+}
+
+/** Invalida o cache de uma ou todas as entidades */
+export function invalidateCache(key?: CacheKey): void {
+  if (key) {
+    cache[key] = null;
+    devLog('Cache', `Invalidated: ${key}`);
+  } else {
+    Object.keys(cache).forEach(k => (cache as any)[k] = null);
+    devLog('Cache', 'Invalidated: ALL');
+  }
+}
+
+// ─── SAFE QUERY WRAPPER ─────────────────────────────────────────────────────
+
+const DEFAULT_TIMEOUT = 20000; // 20s — mobile-friendly
 
 /**
- * Versão simplificada sem Promise.race/timeout para garantir que nada bloqueie.
+ * Executa uma query Supabase de forma segura.
+ * GARANTE que sempre resolve — nunca fica pendurado.
  */
-async function call<T>(promise: PromiseLike<{ data: T | null; error: any }>, context: string, timeoutMs: number = 15000): Promise<T> {
+async function call<T>(
+  promise: PromiseLike<{ data: T | null; error: any }>, 
+  context: string, 
+  timeoutMs: number = DEFAULT_TIMEOUT
+): Promise<T> {
   try {
-    const { data, error } = timeoutMs > 0 
-      ? await withTimeout(Promise.resolve(promise), timeoutMs)
-      : await Promise.resolve(promise);
-      
+    const result = await Promise.race([
+      Promise.resolve(promise),
+      new Promise<never>((_, reject) => {
+        if (timeoutMs > 0) {
+          setTimeout(() => reject(new Error('TIMEOUT_EXCEEDED')), timeoutMs);
+        }
+      }),
+    ]);
+
+    const { data, error } = result;
     if (error) handleError(error, context);
+    
     if (data === null) {
-        if (context.toLowerCase().includes('get')) return [] as any;
-        throw new Error(`Nenhum dado retornado em ${context}`);
+      // For GET operations, return empty array instead of throwing
+      if (context.toLowerCase().includes('get')) {
+        return [] as any;
+      }
+      throw new Error(`Nenhum dado retornado em ${context}`);
     }
     return data as T;
   } catch (error: any) {
     if (error.message === 'TIMEOUT_EXCEEDED') {
-      console.error(`[Timeout] ${context} demorou mais de ${timeoutMs}ms`);
+      warnLog('Timeout', `${context} excedeu ${timeoutMs}ms`);
+      // For GET operations, return empty array on timeout
       if (context.toLowerCase().includes('get')) return [] as any;
     }
     throw error;
   }
 }
+
+// ─── FILE UPLOAD ─────────────────────────────────────────────────────────────
 
 export const uploadFile = async (bucket: string, file: File): Promise<string> => {
   const fileExt = file.name.split('.').pop();
@@ -53,61 +124,76 @@ export const uploadFile = async (bucket: string, file: File): Promise<string> =>
 // ─── VEÍCULOS ────────────────────────────────────────────────────────────────
 
 export const getVehicles = async (): Promise<Vehicle[]> => {
-  if (vehiclesCache && (Date.now() - vehiclesCache.timestamp < CACHE_TTL)) {
-    return vehiclesCache.data;
-  }
+  const cached = getCached<Vehicle[]>('vehicles');
+  if (cached) return cached;
+
   const data = await call<Vehicle[]>(
     supabase.from('vehicles').select('*').order('created_at', { ascending: false }),
     'getVehicles'
   );
-  vehiclesCache = { data, timestamp: Date.now() };
+  setCache('vehicles', data);
   return data;
 };
 
 export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehicle> => {
-  return call<Vehicle>(
+  const result = await call<Vehicle>(
     supabase.from('vehicles').insert([vehicle]).select().single(),
     'createVehicle'
   );
+  invalidateCache('vehicles');
+  return result;
 };
 
 export const updateVehicle = async (id: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
-  return call<Vehicle>(
+  const result = await call<Vehicle>(
     supabase.from('vehicles').update(updates).eq('id', id).select().single(),
     'updateVehicle'
   );
+  invalidateCache('vehicles');
+  return result;
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {
   await call(
     supabase.from('vehicles').delete().eq('id', id),
-    'deleteVehicle'
+    'deleteVehicle',
+    0
   );
+  invalidateCache('vehicles');
 };
 
 // ─── ABASTECIMENTOS ──────────────────────────────────────────────────────────
 
 export const getFuelLogs = async (): Promise<FuelLog[]> => {
-  return call<FuelLog[]>(
-    supabase.from('fuel_logs').select('*').order('created_at', { ascending: false }),
+  const cached = getCached<FuelLog[]>('fuelLogs');
+  if (cached) return cached;
+
+  const data = await call<FuelLog[]>(
+    supabase.from('fuel_logs').select('*').order('created_at', { ascending: false }).limit(200),
     'getFuelLogs'
   );
+  setCache('fuelLogs', data);
+  return data;
 };
 
 export const createFuelLog = async (log: Omit<FuelLog, 'id'>): Promise<FuelLog> => {
-  return withRetry(async () => {
+  const result = await withRetry(async () => {
     return call<FuelLog>(
       supabase.from('fuel_logs').insert([log]).select().single(),
       'createFuelLog'
     );
   }, 2);
+  invalidateCache('fuelLogs');
+  return result;
 };
 
 export const updateFuelLog = async (id: string, updates: Partial<FuelLog>): Promise<FuelLog> => {
-  return call<FuelLog>(
+  const result = await call<FuelLog>(
     supabase.from('fuel_logs').update(updates).eq('id', id).select().single(),
     'updateFuelLog'
   );
+  invalidateCache('fuelLogs');
+  return result;
 };
 
 export const deleteFuelLog = async (id: string): Promise<void> => {
@@ -116,29 +202,39 @@ export const deleteFuelLog = async (id: string): Promise<void> => {
     'deleteFuelLog',
     0
   );
+  invalidateCache('fuelLogs');
 };
 
 // ─── MANUTENÇÕES ─────────────────────────────────────────────────────────────
 
 export const getMaintenances = async (): Promise<Maintenance[]> => {
-  return call<Maintenance[]>(
-    supabase.from('maintenances').select('*').order('created_at', { ascending: false }),
+  const cached = getCached<Maintenance[]>('maintenances');
+  if (cached) return cached;
+
+  const data = await call<Maintenance[]>(
+    supabase.from('maintenances').select('*').order('created_at', { ascending: false }).limit(200),
     'getMaintenances'
   );
+  setCache('maintenances', data);
+  return data;
 };
 
 export const createMaintenance = async (maintenance: Omit<Maintenance, 'id'>): Promise<Maintenance> => {
-  return call<Maintenance>(
+  const result = await call<Maintenance>(
     supabase.from('maintenances').insert([maintenance]).select().single(),
     'createMaintenance'
   );
+  invalidateCache('maintenances');
+  return result;
 };
 
 export const updateMaintenance = async (id: string, updates: Partial<Maintenance>): Promise<Maintenance> => {
-  return call<Maintenance>(
+  const result = await call<Maintenance>(
     supabase.from('maintenances').update(updates).eq('id', id).select().single(),
     'updateMaintenance'
   );
+  invalidateCache('maintenances');
+  return result;
 };
 
 export const deleteMaintenance = async (id: string): Promise<void> => {
@@ -147,6 +243,7 @@ export const deleteMaintenance = async (id: string): Promise<void> => {
     'deleteMaintenance',
     0 // Sem timeout para delete
   );
+  invalidateCache('maintenances');
 };
 
 // ─── CHECKLISTS ──────────────────────────────────────────────────────────────
@@ -235,11 +332,16 @@ function checklistToRow(c: Omit<Checklist, 'id'>): Omit<ChecklistRow, 'id'> {
 }
 
 export const getChecklists = async (): Promise<Checklist[]> => {
+  const cached = getCached<Checklist[]>('checklists');
+  if (cached) return cached;
+
   const data = await call<ChecklistRow[]>(
     supabase.from('checklists').select('*').order('created_at', { ascending: false }).limit(200),
     'getChecklists'
   );
-  return (data ?? []).map(rowToChecklist);
+  const result = (data ?? []).map(rowToChecklist);
+  setCache('checklists', result);
+  return result;
 };
 
 export const createChecklist = async (checklist: Omit<Checklist, 'id'>): Promise<Checklist> => {
@@ -248,6 +350,7 @@ export const createChecklist = async (checklist: Omit<Checklist, 'id'>): Promise
     supabase.from('checklists').insert([row]).select().single(),
     'createChecklist'
   );
+  invalidateCache('checklists');
   return rowToChecklist(data);
 };
 
@@ -261,6 +364,7 @@ export const updateChecklist = async (id: string, updates: Partial<Checklist>): 
     supabase.from('checklists').update(flat).eq('id', id).select().single(),
     'updateChecklist'
   );
+  invalidateCache('checklists');
   return rowToChecklist(data);
 };
 
@@ -270,33 +374,44 @@ export const deleteChecklist = async (id: string): Promise<void> => {
     'deleteChecklist',
     0
   );
+  invalidateCache('checklists');
 };
 
 export const marcarAvisoRevisado = async (id: string): Promise<void> => {
   await supabase.from('checklists').update({ aviso_revisado: true }).eq('id', id);
+  invalidateCache('checklists');
 };
 
 // ─── DIÁRIO DE BORDO ──────────────────────────────────────────────────────────
 
 export const getLogbooks = async (): Promise<Logbook[]> => {
-  return call<Logbook[]>(
+  const cached = getCached<Logbook[]>('logbooks');
+  if (cached) return cached;
+
+  const data = await call<Logbook[]>(
     supabase.from('logbooks').select('*').order('created_at', { ascending: false }).limit(200),
     'getLogbooks'
   );
+  setCache('logbooks', data);
+  return data;
 };
 
 export const createLogbook = async (logbook: Omit<Logbook, 'id'>): Promise<Logbook> => {
-  return call<Logbook>(
+  const result = await call<Logbook>(
     supabase.from('logbooks').insert([logbook]).select().single(),
     'createLogbook'
   );
+  invalidateCache('logbooks');
+  return result;
 };
 
 export const updateLogbook = async (id: string, updates: Partial<Logbook>): Promise<Logbook> => {
-  return call<Logbook>(
+  const result = await call<Logbook>(
     supabase.from('logbooks').update(updates).eq('id', id).select().single(),
     'updateLogbook'
   );
+  invalidateCache('logbooks');
+  return result;
 };
 
 export const deleteLogbook = async (id: string): Promise<void> => {
@@ -305,29 +420,39 @@ export const deleteLogbook = async (id: string): Promise<void> => {
     'deleteLogbook',
     0
   );
+  invalidateCache('logbooks');
 };
 
 // ─── DESPESAS OPERACIONAIS ───────────────────────────────────────────────────
 
 export const getExpenses = async (): Promise<Expense[]> => {
-  return call<Expense[]>(
+  const cached = getCached<Expense[]>('expenses');
+  if (cached) return cached;
+
+  const data = await call<Expense[]>(
     supabase.from('expenses').select('*').order('data', { ascending: false }).limit(200),
     'getExpenses'
   );
+  setCache('expenses', data);
+  return data;
 };
 
 export const createExpense = async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
-  return call<Expense>(
+  const result = await call<Expense>(
     supabase.from('expenses').insert([expense]).select().single(),
     'createExpense'
   );
+  invalidateCache('expenses');
+  return result;
 };
 
 export const updateExpense = async (id: string, updates: Partial<Expense>): Promise<Expense> => {
-  return call<Expense>(
+  const result = await call<Expense>(
     supabase.from('expenses').update(updates).eq('id', id).select().single(),
     'updateExpense'
   );
+  invalidateCache('expenses');
+  return result;
 };
 
 export const deleteExpense = async (id: string): Promise<void> => {
@@ -336,6 +461,7 @@ export const deleteExpense = async (id: string): Promise<void> => {
     'deleteExpense',
     0
   );
+  invalidateCache('expenses');
 };
 
 // ─── EVENTOS DE VIAGEM (PAUSAS / ESPERAS) ────────────────────────────────────
@@ -366,16 +492,23 @@ export const deleteTripEvent = async (id: string): Promise<void> => {
 // ─── PERFIS (USUÁRIOS) ────────────────────────────────────────────────────────
 
 export const getProfiles = async () => {
+  const cached = getCached<any[]>('profiles');
+  if (cached) return cached;
+
   const data = await call<any[]>(
     supabase.from('profiles').select('*').order('name', { ascending: true }),
     'getProfiles'
   );
-  return data ?? [];
+  const result = data ?? [];
+  setCache('profiles', result);
+  return result;
 };
 
 export const updateProfileRole = async (id: string, role: 'admin' | 'motorista') => {
-  return call<any>(
+  const result = await call<any>(
     supabase.from('profiles').update({ role }).eq('id', id).select().single(),
     'updateProfileRole'
   );
+  invalidateCache('profiles');
+  return result;
 };

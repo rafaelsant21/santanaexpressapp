@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { getChecklists } from '@/services/supabaseService';
 import Image from 'next/image';
 import { Truck, Fuel, Wrench, CheckSquare, LayoutDashboard, LogOut, Menu, Shield, User, BookOpen, Receipt, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -38,20 +37,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [avisosPendentes, setAvisosPendentes] = useState(0);
 
-  // Busca alertas pendentes (checklist com observações não revisadas) só para admin
-  useEffect(() => {
-    if (!session || session.role !== 'admin') return;
-    const load = () =>
-      getChecklists().then(list => {
-        const count = list.filter(c => c.observacoes?.trim() && !c.aviso_revisado).length;
-        setAvisosPendentes(count);
-      });
-    load();
-    const interval = setInterval(load, 60_000); // revalida a cada 1 min
-    return () => clearInterval(interval);
-  }, [session]);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
+  const toggleMobileMenu = useCallback(() => setMobileMenuOpen(prev => !prev), []);
+
+  const handleLogout = useCallback(async () => {
+    closeMobileMenu();
+    await logout();
+  }, [logout, closeMobileMenu]);
 
   if (isLoading) {
     return (
@@ -96,19 +89,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               width={32} 
               height={32} 
               className="rounded-lg"
+              priority
             />
           <span className="font-bold text-lg tracking-tight">Santana Express</span>
         </div>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-muted-foreground hover:text-foreground">
+        <button onClick={toggleMobileMenu} className="p-2 text-muted-foreground hover:text-foreground">
           <Menu className="h-6 w-6" />
         </button>
       </div>
 
-      {/* Overlay Backdrop - Aparece quando o menu abre no mobile */}
+      {/* Overlay Backdrop */}
       {mobileMenuOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity md:hidden" 
-          onClick={() => setMobileMenuOpen(false)} 
+          onClick={closeMobileMenu} 
         />
       )}
 
@@ -126,6 +120,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 width={40} 
                 height={40} 
                 className="rounded-lg shadow-lg shadow-primary/20"
+                priority
               />
               <div className="text-primary font-bold text-xl tracking-tight leading-tight">
                 SANTANA<br />
@@ -143,7 +138,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={closeMobileMenu}
                   className={cn(
                     "flex items-center w-full gap-3 px-6 py-3 text-sm font-medium transition-colors",
                     isActive
@@ -153,12 +148,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 >
                   <Icon className="h-4 w-4" />
                   {item.name}
-                  {/* Badge de alertas no item Checklists */}
-                  {isAdmin && item.href === '/checklist' && avisosPendentes > 0 && (
-                    <span className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1">
-                      {avisosPendentes}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -180,7 +169,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
             >
               <LogOut className="h-4 w-4" />
@@ -188,7 +177,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-        {/* Removido o backdrop click antigo pois foi movido para fora da sidebar */}
       </div>
 
       {/* Main Content */}

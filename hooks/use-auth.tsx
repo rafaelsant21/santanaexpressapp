@@ -1,10 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { UserSession, UserRole } from '@/services/types';
-import { withTimeout } from '@/lib/utils';
+import { devLog, warnLog } from '@/lib/utils';
 
 interface AuthContextType {
   session: UserSession | null;
@@ -22,114 +22,125 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchProfile = async (userId: string) => {
       try {
-        const { data, error } = await withTimeout(Promise.resolve(supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .single()), 10000) as any;
+          .single();
         
         if (error) {
-          console.error('Error fetching profile:', error);
+          warnLog('Auth', 'Error fetching profile:', error.message);
           return null;
         }
         return data;
-      } catch (err) {
-        console.error('Profile fetch failed:', err);
+      } catch (err: any) {
+        warnLog('Auth', 'Profile fetch failed:', err?.message);
         return null;
       }
     };
 
-    // Verifica sessão existente ao carregar
-    console.log('[Auth] Checking session...');
-    (withTimeout(Promise.resolve(supabase.auth.getSession()), 10000) as any)
-      .then(async ({ data: { session: s } }: any) => {
-        console.log('[Auth] Session data:', s?.user?.email || 'no session');
-        try {
-          if (s?.user) {
-            const profile = await fetchProfile(s.user.id);
-            console.log('[Auth] Profile fetched:', profile?.name || 'no profile');
-            const role = (profile?.role ?? 'motorista') as UserRole;
-            setSession({
-              id: s.user.id,
-              email: s.user.email!,
-              name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
-              role,
-              isLoggedIn: true,
-            });
+    const buildSession = async (user: any): Promise<UserSession | null> => {
+      if (!user) return null;
+      const profile = await fetchProfile(user.id);
+      const role = (profile?.role ?? 'motorista') as UserRole;
+      return {
+        id: user.id,
+        email: user.email!,
+        name: profile?.name ?? user.user_metadata?.name ?? user.email!.split('@')[0],
+        role,
+        isLoggedIn: true,
+      };
+    };
+
+    // Check existing session on mount
+    const initSession = async () => {
+      try {
+        devLog('Auth', 'Checking session...');
+        const { data: { session: s }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          warnLog('Auth', 'Session fetch error:', error.message);
+          return;
+        }
+
+        if (s?.user && isMounted) {
+          const userSession = await buildSession(s.user);
+          if (isMounted) {
+            devLog('Auth', 'Session loaded:', userSession?.email);
+            setSession(userSession);
           }
-        } catch (err) {
-          console.error('[Auth] Initialization error:', err);
-        } finally {
+        }
+      } catch (err: any) {
+        warnLog('Auth', 'Init error:', err?.message);
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
         }
-      })
-      .catch((err: any) => {
-        console.error('[Auth] Session fetch error:', err);
-        setIsLoading(false);
-      });
+      }
+    };
 
-    // Escuta mudanças de sessão
+    initSession();
+
+    // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
-      console.log('[Auth] State change event:', event);
+      devLog('Auth', 'State change:', event);
       try {
-        if (s?.user) {
-          const profile = await fetchProfile(s.user.id);
-          const role = (profile?.role ?? 'motorista') as UserRole;
-          setSession({
-            id: s.user.id,
-            email: s.user.email!,
-            name: profile?.name ?? s.user.user_metadata?.name ?? s.user.email!.split('@')[0],
-            role,
-            isLoggedIn: true,
-          });
-        } else {
+        if (s?.user && isMounted) {
+          const userSession = await buildSession(s.user);
+          if (isMounted) setSession(userSession);
+        } else if (isMounted) {
           setSession(null);
         }
-      } catch (err) {
-        console.error('[Auth] State change error:', err);
+      } catch (err: any) {
+        warnLog('Auth', 'State change error:', err?.message);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
+  // Navigation guard
   useEffect(() => {
-    if (!isLoading) {
-      console.log('[Auth] Pathname check:', pathname, 'Session:', !!session);
-      if (!session && pathname !== '/login') {
-        console.log('[Auth] No session, redirecting to /login');
-        router.push('/login');
-      } else if (session && pathname === '/login') {
-        const target = session.role === 'admin' ? '/dashboard' : '/checklist';
-        console.log('[Auth] Session exists, redirecting to', target);
-        router.push(target);
-      } else if (pathname === '/') {
-        const target = session ? (session.role === 'admin' ? '/dashboard' : '/checklist') : '/login';
-        console.log('[Auth] Root path, redirecting to', target);
-        router.push(target);
-      }
+    if (isLoading) return;
+
+    if (!session && pathname !== '/login') {
+      devLog('Auth', 'No session, redirecting to /login');
+      router.push('/login');
+    } else if (session && pathname === '/login') {
+      const target = session.role === 'admin' ? '/dashboard' : '/checklist';
+      devLog('Auth', 'Session exists, redirecting to', target);
+      router.push(target);
+    } else if (pathname === '/') {
+      const target = session ? (session.role === 'admin' ? '/dashboard' : '/checklist') : '/login';
+      router.push(target);
     }
   }, [session, isLoading, pathname, router]);
 
-  // Login real com Supabase Auth
-  const login = async (email: string, password: string): Promise<string | null> => {
-    console.log('[Auth] Attempting login for', email);
+  // Memoized login
+  const login = useCallback(async (email: string, password: string): Promise<string | null> => {
+    devLog('Auth', 'Login attempt for', email);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      console.error('[Auth] Login error:', error.message);
+      warnLog('Auth', 'Login error:', error.message);
       return error.message;
     }
     return null;
-  };
+  }, []);
 
-  const logout = async () => {
-    console.log('[Auth] Logging out...');
+  // Memoized logout
+  const logout = useCallback(async () => {
+    devLog('Auth', 'Logging out...');
     await supabase.auth.signOut();
     setSession(null);
     router.push('/login');
-  };
+  }, [router]);
 
   return (
     <AuthContext.Provider value={{ session, login, logout, isLoading }}>

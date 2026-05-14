@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from 'sonner';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,10 +37,22 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="pt-BR" className={inter.variable}>
       <body className="antialiased min-h-[100dvh] bg-background overflow-x-hidden w-full" suppressHydrationWarning>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-        <Toaster theme="dark" richColors position="top-right" />
+        <ErrorBoundary>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ErrorBoundary>
+        <Toaster 
+          theme="dark" 
+          richColors 
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              fontSize: '13px',
+            },
+          }}
+        />
       </body>
     </html>
   );

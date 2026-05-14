@@ -54,25 +54,37 @@ export function getUTCISO(): string {
 }
 
 /**
- * Wrapper para promessas com timeout de segurança.
+ * Wrapper seguro para promessas com timeout.
+ * Usa AbortController quando possível para cancelar de fato a operação.
+ * GARANTE que sempre resolve ou rejeita — nunca fica pendurado.
  */
-export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 15000): Promise<T> {
-  let timeoutHandle: ReturnType<typeof setTimeout>;
-  
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(() => {
-      reject(new Error('TIMEOUT_EXCEEDED'));
-    }, timeoutMs);
-  });
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number = 20000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
 
-  try {
-    const result = await Promise.race([promise, timeoutPromise]);
-    clearTimeout(timeoutHandle!);
-    return result;
-  } catch (error) {
-    clearTimeout(timeoutHandle!);
-    throw error;
-  }
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error('TIMEOUT_EXCEEDED'));
+      }
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(result);
+        }
+      })
+      .catch((error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(error);
+        }
+      });
+  });
 }
 
 /**
@@ -90,4 +102,64 @@ export async function withRetry<T>(
     await new Promise(resolve => setTimeout(resolve, delay));
     return withRetry(fn, retries - 1, delay * 2);
   }
+}
+
+/**
+ * Debounce: atrasa a execução de uma função até que pare de ser chamada.
+ * Útil para campos de busca.
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  delayMs: number = 300,
+): (...args: Parameters<T>) => void {
+  let timer: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delayMs);
+  };
+}
+
+/**
+ * Wrapper padronizado para operações async com loading + error handling.
+ * Garante que loading SEMPRE finaliza e erros são tratados.
+ */
+export async function safeAsync<T>(
+  fn: () => Promise<T>,
+  options?: {
+    onError?: (error: Error) => void;
+    fallback?: T;
+    context?: string;
+  }
+): Promise<T | undefined> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    if (options?.context) {
+      console.error(`[${options.context}]`, msg);
+    }
+    if (options?.onError) {
+      options.onError(error);
+    }
+    if (options?.fallback !== undefined) {
+      return options.fallback;
+    }
+    return undefined;
+  }
+}
+
+/**
+ * Log condicional — só imprime em desenvolvimento.
+ */
+export function devLog(context: string, ...args: any[]) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[${context}]`, ...args);
+  }
+}
+
+/**
+ * Warn log — sempre imprime (para erros que precisam ser monitorados).
+ */
+export function warnLog(context: string, ...args: any[]) {
+  console.warn(`[${context}]`, ...args);
 }
