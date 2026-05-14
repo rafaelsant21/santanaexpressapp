@@ -21,7 +21,6 @@ const adminNavItems = [
   { name: 'Combustível', href: '/combustivel', icon: Fuel },
   { name: 'Manutenção', href: '/manutencao', icon: Wrench },
   { name: 'Despesas', href: '/despesas-operacionais', icon: Receipt },
-  { name: 'Usuários', href: '/usuarios', icon: User },
 ];
 
 const driverNavItems = [
