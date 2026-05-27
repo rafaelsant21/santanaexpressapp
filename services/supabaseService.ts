@@ -77,21 +77,27 @@ async function call<T>(
   timeoutMs: number = DEFAULT_TIMEOUT
 ): Promise<T> {
   try {
-    const result = await Promise.race([
-      Promise.resolve(promise),
-      new Promise<never>((_, reject) => {
-        if (timeoutMs > 0) {
+    let result: { data: T | null; error: any };
+
+    if (timeoutMs <= 0) {
+      // Sem timeout — aguarda diretamente (usado para deletes)
+      result = await Promise.resolve(promise);
+    } else {
+      // Com timeout de segurança
+      result = await Promise.race([
+        Promise.resolve(promise),
+        new Promise<never>((_, reject) => {
           setTimeout(() => reject(new Error('TIMEOUT_EXCEEDED')), timeoutMs);
-        }
-      }),
-    ]);
+        }),
+      ]);
+    }
 
     const { data, error } = result;
     if (error) handleError(error, context);
     
     if (data === null) {
       // For GET operations, return empty array instead of throwing
-      if (context.toLowerCase().includes('get')) {
+      if (context.toLowerCase().includes('get') || context.toLowerCase().includes('delete')) {
         return [] as any;
       }
       throw new Error(`Nenhum dado retornado em ${context}`);
