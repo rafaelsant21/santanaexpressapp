@@ -15,11 +15,9 @@ import {
   CheckCircle2, 
   XCircle, 
   Search, 
-  Filter,
   MapPin,
   Image as ImageIcon,
-  AlertTriangle,
-  Truck
+  AlertTriangle
 } from 'lucide-react';
 import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getExpenses, createExpense, updateExpense, deleteExpense } from '@/services/supabaseService';
@@ -30,6 +28,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { parseBRL, getLocalDateISO, getLocalDateOnly } from '@/lib/utils';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_DESPESA: ExpenseType[] = [
@@ -105,7 +104,7 @@ export default function DespesasOperacionaisPage() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [eData, vData] = await Promise.all([getExpenses(), getVehicles()]);
@@ -116,13 +115,13 @@ export default function DespesasOperacionaisPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleOpenModal = (expense?: Expense) => {
+  const handleOpenModal = useCallback((expense?: Expense) => {
     if (expense) {
       setEditingExpense(expense);
       setFormData({
@@ -141,9 +140,9 @@ export default function DespesasOperacionaisPage() {
       });
     }
     setIsModalOpen(true);
-  };
+  }, [vehicles, session?.name]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -181,9 +180,9 @@ export default function DespesasOperacionaisPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, editingExpense, session?.id, loadData]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Deseja realmente excluir esta despesa?')) return;
     try {
       await deleteExpense(id);
@@ -192,7 +191,7 @@ export default function DespesasOperacionaisPage() {
     } catch {
       toast.error('Erro ao excluir');
     }
-  };
+  }, [loadData]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(exp => {
@@ -247,7 +246,7 @@ export default function DespesasOperacionaisPage() {
     'Recusada': XCircle
   };
 
-  const exportExcel = () => {
+  const exportExcel = useCallback(() => {
     if (filteredExpenses.length === 0) {
       toast.error('Nenhum dado para exportar');
       return;
@@ -269,7 +268,7 @@ export default function DespesasOperacionaisPage() {
     });
     exportToExcel(rows, `despesas_operacionais_${format(new Date(), 'yyyyMMdd')}`, 'Despesas');
     toast.success('Exportado com sucesso!');
-  };
+  }, [filteredExpenses, vehicles]);
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full overflow-hidden">
@@ -361,7 +360,7 @@ export default function DespesasOperacionaisPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                  <TableSkeleton cols={7} rows={5} />
                 ) : filteredExpenses.length === 0 ? (
                   <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Nenhuma despesa encontrada.</td></tr>
                 ) : (

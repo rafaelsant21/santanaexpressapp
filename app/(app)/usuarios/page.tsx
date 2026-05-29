@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card } from '@/components/ui/modal';
 import { Button, Select, Label } from '@/components/ui/forms';
 import { User, Shield, ShieldAlert, Loader2, Search } from 'lucide-react';
 import { getProfiles, updateProfileRole } from '@/services/supabaseService';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 export default function UsuariosPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -14,7 +15,7 @@ export default function UsuariosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { session } = useAuth();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getProfiles();
@@ -24,13 +25,13 @@ export default function UsuariosPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleRoleChange = async (userId: string, newRole: 'admin' | 'motorista') => {
+  const handleRoleChange = useCallback(async (userId: string, newRole: 'admin' | 'motorista') => {
     if (userId === session?.id) {
       toast.error('Você não pode alterar seu próprio nível de acesso.');
       return;
@@ -43,11 +44,11 @@ export default function UsuariosPage() {
     } catch {
       toast.error('Erro ao atualizar permissão');
     }
-  };
+  }, [session?.id]);
 
-  const filteredProfiles = profiles.filter(p => 
+  const filteredProfiles = useMemo(() => profiles.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [profiles, searchTerm]);
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
@@ -83,11 +84,7 @@ export default function UsuariosPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    </td>
-                  </tr>
+                  <TableSkeleton cols={4} rows={5} />
                 ) : filteredProfiles.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground border-b border-border">

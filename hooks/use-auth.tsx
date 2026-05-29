@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { UserSession, UserRole } from '@/services/types';
@@ -15,16 +15,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Cache do perfil para não refazer query a cada auth state change
+const profileCache = new Map<string, { data: any; ts: number }>();
+const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
 
     const fetchProfile = async (userId: string) => {
+      // Checar cache de perfil
+      const cached = profileCache.get(userId);
+      if (cached && Date.now() - cached.ts < PROFILE_CACHE_TTL) {
+        return cached.data;
+      }
+
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -36,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           warnLog('Auth', 'Error fetching profile:', error.message);
           return null;
         }
+        // Cachear resultado
+        profileCache.set(userId, { data, ts: Date.now() });
         return data;
       } catch (err: any) {
         warnLog('Auth', 'Profile fetch failed:', err?.message);
@@ -73,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const sessionResult = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (!sessionResult) {
-          // Timed out — let the user go to login
+          // Timed out
           return;
         }
 
@@ -84,9 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (s?.user && isMounted) {
+        if (s?.user && isMountedRef.current) {
           const userSession = await buildSession(s.user);
-          if (isMounted) {
+          if (isMountedRef.current) {
             devLog('Auth', 'Session loaded:', userSession?.email);
             setSession(userSession);
           }
@@ -94,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err: any) {
         warnLog('Auth', 'Init error:', err?.message);
       } finally {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setIsLoading(false);
         }
       }
@@ -105,12 +118,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, s) => {
       devLog('Auth', 'State change:', event);
+
+      // Ignorar TOKEN_REFRESHED — a sessão já existe, não precisa refazer o perfil
+      if (event === 'TOKEN_REFRESHED') {
+        devLog('Auth', 'Token refreshed, keeping current session');
+        return;
+      }
+
       try {
-        if (s?.user && isMounted) {
+        if (event === 'SIGNED_OUT') {
+          if (isMountedRef.current) setSession(null);
+          return;
+        }
+
+        if (s?.user && isMountedRef.current) {
           const userSession = await buildSession(s.user);
-          if (isMounted) setSession(userSession);
-        } else if (isMounted) {
-          setSession(null);
+          if (isMountedRef.current) setSession(userSession);
+        } else if (event === 'SIGNED_IN' && !s?.user) {
+          // Edge case: SIGNED_IN sem user = ignorar (não deslogar)
+          warnLog('Auth', 'SIGNED_IN event without user, ignoring');
         }
       } catch (err: any) {
         warnLog('Auth', 'State change error:', err?.message);
@@ -118,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -154,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Memoized logout
   const logout = useCallback(async () => {
     devLog('Auth', 'Logging out...');
+    profileCache.clear();
     await supabase.auth.signOut();
     setSession(null);
     router.push('/login');

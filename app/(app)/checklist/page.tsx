@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
-import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon, Search } from 'lucide-react';
+import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getChecklists, createChecklist, updateChecklist, deleteChecklist, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, Checklist, TipoViagem } from '@/services/types';
@@ -104,7 +105,7 @@ export default function ChecklistPage() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [mData, vData] = await Promise.all([getChecklists(), getVehicles()]);
@@ -115,7 +116,7 @@ export default function ChecklistPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => { loadData(); }, []);
 

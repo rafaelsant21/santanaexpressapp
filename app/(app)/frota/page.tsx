@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
 import { Truck, Plus, Edit, Trash2, Search, Loader2 } from 'lucide-react';
 import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from '@/services/supabaseService';
 import { Vehicle, VehicleStatus } from '@/services/types';
 import { toast } from 'sonner';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 export default function FrotaPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -27,7 +28,7 @@ export default function FrotaPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getVehicles();
@@ -37,13 +38,13 @@ export default function FrotaPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleOpenModal = (vehicle?: Vehicle) => {
+  const handleOpenModal = useCallback((vehicle?: Vehicle) => {
     if (vehicle) {
       setEditingVehicle(vehicle);
       setFormData({
@@ -66,9 +67,9 @@ export default function FrotaPage() {
       });
     }
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -92,9 +93,9 @@ export default function FrotaPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, editingVehicle, loadData]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Deseja realmente excluir este veículo?')) return;
     try {
       await deleteVehicle(id);
@@ -103,13 +104,13 @@ export default function FrotaPage() {
     } catch (error) {
       toast.error('Erro ao excluir veículo');
     }
-  };
+  }, [loadData]);
 
-  const filteredVehicles = vehicles.filter(v => 
+  const filteredVehicles = useMemo(() => vehicles.filter(v => 
     v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.marca.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [vehicles, searchTerm]);
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
@@ -151,11 +152,7 @@ export default function FrotaPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  </td>
-                </tr>
+                <TableSkeleton cols={6} rows={5} />
               ) : filteredVehicles.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground border-b border-border">

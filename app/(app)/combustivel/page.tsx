@@ -11,6 +11,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
@@ -55,7 +56,7 @@ export default function CombustivelPage() {
   }, [logs, mesFilter]);
 
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [fLogs, vData] = await Promise.all([getFuelLogs(), getVehicles()]);
@@ -66,13 +67,13 @@ export default function CombustivelPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleOpenModal = (log?: FuelLog) => {
+  const handleOpenModal = useCallback((log?: FuelLog) => {
     if (log) {
       setEditingLog(log);
       setFormData({
@@ -95,9 +96,9 @@ export default function CombustivelPage() {
       });
     }
     setIsModalOpen(true);
-  };
+  }, [vehicles, session?.name]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -132,10 +133,10 @@ export default function CombustivelPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, editingLog, session?.id, vehicles, loadData]);
 
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Deseja realmente excluir este registro?')) return;
     try {
       await deleteFuelLog(id);
@@ -144,9 +145,9 @@ export default function CombustivelPage() {
     } catch (error) {
       toast.error('Erro ao excluir registro');
     }
-  };
+  }, [loadData]);
 
-  const exportExcel = () => {
+  const exportExcel = useCallback(() => {
     if (filteredLogs.length === 0) { toast.error('Nenhum dado para exportar'); return; }
     const sorted = [...filteredLogs].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
     const rows = sorted.map((log, _, arr) => {
@@ -173,21 +174,34 @@ export default function CombustivelPage() {
     const label = mesFilter || 'todos';
     exportToExcel(rows, `combustivel_${label}`, 'Abastecimentos');
     toast.success('Exportado com sucesso!');
-  };
+  }, [filteredLogs, vehicles, mesFilter]);
 
-  const calculateAvg = (current: FuelLog) => {
-    // Find the previous fuel log for the same vehicle
-    const vehicleLogs = logs.filter(l => l.vehicle_id === current.vehicle_id).sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-    const currentIndex = vehicleLogs.findIndex(l => l.id === current.id);
-    if (currentIndex > 0) {
-      const prev = vehicleLogs[currentIndex - 1];
-      const distance = current.km_no_abastecimento - prev.km_no_abastecimento;
-      if (distance > 0 && current.litros > 0) {
-        return (distance / current.litros).toFixed(2) + ' km/l';
+  const avgMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // Group logs by vehicle and sort by date
+    const byVehicle = new Map<string, FuelLog[]>();
+    for (const log of logs) {
+      const arr = byVehicle.get(log.vehicle_id) || [];
+      arr.push(log);
+      byVehicle.set(log.vehicle_id, arr);
+    }
+    for (const [, vehicleLogs] of byVehicle) {
+      vehicleLogs.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+      for (let i = 0; i < vehicleLogs.length; i++) {
+        const current = vehicleLogs[i];
+        if (i > 0) {
+          const prev = vehicleLogs[i - 1];
+          const distance = current.km_no_abastecimento - prev.km_no_abastecimento;
+          if (distance > 0 && current.litros > 0) {
+            map.set(current.id, (distance / current.litros).toFixed(2) + ' km/l');
+            continue;
+          }
+        }
+        map.set(current.id, '-');
       }
     }
-    return '-';
-  };
+    return map;
+  }, [logs]);
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
@@ -240,11 +254,7 @@ export default function CombustivelPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    </td>
-                  </tr>
+                  <TableSkeleton cols={8} rows={5} />
                 ) : filteredLogs.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground border-b border-border">
@@ -264,7 +274,7 @@ export default function CombustivelPage() {
                         <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{log.km_no_abastecimento.toLocaleString()}</td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-foreground">{log.litros} L</td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-foreground font-medium">R$ {log.valor_total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                        <td className="px-4 py-3 text-[13px] border-b border-border text-muted-foreground">{calculateAvg(log)}</td>
+                        <td className="px-4 py-3 text-[13px] border-b border-border text-muted-foreground">{avgMap.get(log.id) ?? '-'}</td>
                         <td className="px-4 py-3 text-[13px] border-b border-border text-right">
                           <div className="flex justify-end gap-2">
                             {isAdmin && (

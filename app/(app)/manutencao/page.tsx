@@ -11,6 +11,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
@@ -55,7 +56,7 @@ export default function ManutencaoPage() {
   }, [logs, mesFilter]);
 
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [mData, vData] = await Promise.all([getMaintenances(), getVehicles()]);
@@ -66,13 +67,13 @@ export default function ManutencaoPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const handleOpenModal = (log?: Maintenance) => {
+  const handleOpenModal = useCallback((log?: Maintenance) => {
     if (log) {
       setEditingLog(log);
       setFormData({
@@ -99,9 +100,9 @@ export default function ManutencaoPage() {
       });
     }
     setIsModalOpen(true);
-  };
+  }, [vehicles, session?.name]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
@@ -138,9 +139,9 @@ export default function ManutencaoPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, editingLog, session?.id, vehicles, loadData]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('Deseja realmente excluir este registro?')) return;
     try {
       await deleteMaintenance(id);
@@ -149,9 +150,9 @@ export default function ManutencaoPage() {
     } catch (error: any) {
       toast.error(`Erro ao excluir: ${error.message}`);
     }
-  };
+  }, [loadData]);
 
-  const handleToggleStatus = async (log: Maintenance) => {
+  const handleToggleStatus = useCallback(async (log: Maintenance) => {
     try {
       const newStatus = log.status === 'pendente' ? 'concluída' : 'pendente';
       await updateMaintenance(log.id, { status: newStatus });
@@ -170,9 +171,9 @@ export default function ManutencaoPage() {
     } catch (error) {
       toast.error('Erro ao atualizar status');
     }
-  };
+  }, [vehicles, loadData]);
 
-  const exportExcel = () => {
+  const exportExcel = useCallback(() => {
     if (filteredLogs.length === 0) { toast.error('Nenhum dado para exportar'); return; }
     const rows = filteredLogs.map(log => {
       const vehicle = vehicles.find(v => v.id === log.vehicle_id);
@@ -191,7 +192,7 @@ export default function ManutencaoPage() {
     const label = mesFilter || 'todos';
     exportToExcel(rows, `manutencoes_${label}`, 'Manutencoes');
     toast.success('Exportado com sucesso!');
-  };
+  }, [filteredLogs, vehicles, mesFilter]);
 
   return (
     <div className="flex flex-col min-h-0 bg-background h-full">
@@ -242,11 +243,7 @@ export default function ManutencaoPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                    </td>
-                  </tr>
+                  <TableSkeleton cols={7} rows={5} />
                 ) : filteredLogs.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground border-b border-border">

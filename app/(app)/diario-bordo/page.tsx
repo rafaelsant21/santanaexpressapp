@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
 import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon, Bell, Search } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook, getTripEvents, createTripEvent } from '@/services/supabaseService';
 import { Vehicle, Logbook, TipoViagem, TripEvent } from '@/services/types';
@@ -13,7 +14,6 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { parseBRL, getLocalDateISO, getLocalDateOnly, getUTCISO } from '@/lib/utils';
-import { TripTimer } from '@/components/diario-bordo/TripTimer';
 import { TripControls } from '@/components/diario-bordo/TripControls';
 import { TripTimeline } from '@/components/diario-bordo/TripTimeline';
 import { RestAlert } from '@/components/diario-bordo/RestAlert';
@@ -43,8 +43,7 @@ const DEFAULT_FORM: any = {
   comprovante_url: '',
 };
 
-// Badge de status para viagem ativa na tabela
-function ActiveTripBadge({ log }: { log: Logbook }) {
+const ActiveTripBadge = React.memo(function ActiveTripBadge({ log }: { log: Logbook }) {
   if (log.em_pausa) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 border border-blue-500/20 text-blue-400">
@@ -64,7 +63,7 @@ function ActiveTripBadge({ log }: { log: Logbook }) {
       🚛 Dirigindo
     </span>
   );
-}
+});
 
 export default function DiarioBordoPage() {
   const [logs, setLogs] = useState<Logbook[]>([]);
@@ -183,7 +182,7 @@ export default function DiarioBordoPage() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [lData, vData] = await Promise.all([getLogbooks(), getVehicles()]);
@@ -194,7 +193,7 @@ export default function DiarioBordoPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -315,13 +314,16 @@ export default function DiarioBordoPage() {
     toast.success('Exportado com sucesso!');
   };
 
-  // Dashboard Stats
-  const totalViagens = logs.length;
-  const emAndamento = logs.filter(l => l.status === 'Em andamento').length;
-  const aguardandoDescarga = logs.filter(l => l.aguardando_descarga).length;
-  const kmMes = logs
-    .filter(l => l.data_saida && new Date(l.data_saida).getMonth() === new Date().getMonth())
-    .reduce((acc, log) => acc + Math.max(0, log.km_final - log.km_inicial), 0);
+  // Dashboard Stats — memoized to avoid recalculating on every render
+  const stats = useMemo(() => {
+    const totalViagens = logs.length;
+    const emAndamento = logs.filter(l => l.status === 'Em andamento').length;
+    const aguardandoDescarga = logs.filter(l => l.aguardando_descarga).length;
+    const kmMes = logs
+      .filter(l => l.data_saida && new Date(l.data_saida).getMonth() === new Date().getMonth())
+      .reduce((acc, log) => acc + Math.max(0, log.km_final - log.km_inicial), 0);
+    return { totalViagens, emAndamento, aguardandoDescarga, kmMes };
+  }, [logs]);
 
   const StatusIcon: Record<string, any> = {
     'Finalizada': CheckCircle2,
@@ -362,7 +364,7 @@ export default function DiarioBordoPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Total</p>
-              <h3 className="text-xl font-bold">{totalViagens}</h3>
+              <h3 className="text-xl font-bold">{stats.totalViagens}</h3>
             </div>
           </Card>
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
@@ -371,7 +373,7 @@ export default function DiarioBordoPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Em Andamento</p>
-              <h3 className="text-xl font-bold">{emAndamento}</h3>
+              <h3 className="text-xl font-bold">{stats.emAndamento}</h3>
             </div>
           </Card>
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
@@ -380,7 +382,7 @@ export default function DiarioBordoPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Aguard. Descarga</p>
-              <h3 className="text-xl font-bold">{aguardandoDescarga}</h3>
+              <h3 className="text-xl font-bold">{stats.aguardandoDescarga}</h3>
             </div>
           </Card>
           <Card className="p-4 bg-[#1e293b] border-border flex items-center gap-3">
@@ -389,7 +391,7 @@ export default function DiarioBordoPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">KM no Mês</p>
-              <h3 className="text-xl font-bold">{(kmMes/1000).toFixed(1)}k</h3>
+              <h3 className="text-xl font-bold">{(stats.kmMes/1000).toFixed(1)}k</h3>
             </div>
           </Card>
         </div>
@@ -411,7 +413,7 @@ export default function DiarioBordoPage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <TableSkeleton cols={6} rows={5} />
                     </td>
                   </tr>
                 ) : logs.length === 0 ? (
