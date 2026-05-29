@@ -434,7 +434,7 @@ export default function DespesasOperacionaisPage() {
           {/* Sessão 1: Informações Básicas */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold border-b border-border pb-2 text-foreground/80 flex items-center gap-2">
-              <Truck className="h-4 w-4" /> Informações da Viagem
+              <Receipt className="h-4 w-4" /> Informações da Viagem
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
