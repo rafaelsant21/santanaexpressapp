@@ -5,6 +5,7 @@ import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
 import { BookOpen, Plus, Edit, Trash2, Loader2, FileDown, Route, CheckCircle2, Clock, XCircle, MapPin, Image as ImageIcon, Bell, Search } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getLogbooks, createLogbook, updateLogbook, deleteLogbook, getTripEvents, createTripEvent } from '@/services/supabaseService';
 import { Vehicle, Logbook, TipoViagem, TripEvent } from '@/services/types';
@@ -83,6 +84,18 @@ export default function DiarioBordoPage() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
   const { requestPermission, sendRestAlert } = useTripNotifications();
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Logbook | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteLogbook(deleteTarget.id);
+      toast.success('Registro excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   // Timer for selected active trip
   const activeLog = selectedLog?.status === 'Em andamento' ? selectedLog : null;
@@ -273,15 +286,9 @@ export default function DiarioBordoPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Deseja realmente excluir este diário de bordo?')) return;
-    try {
-      await deleteLogbook(id);
-      toast.success('Registro excluído');
-      loadData();
-    } catch {
-      toast.error('Erro ao excluir registro');
-    }
+  const handleDelete = (log: Logbook) => {
+    setDeleteTarget(log);
+    openConfirm();
   };
 
   const exportExcel = () => {
@@ -474,7 +481,7 @@ export default function DiarioBordoPage() {
                               <>
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}><Edit className="h-4 w-4" /></Button>
                                 {isAdmin && (
-                                  <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
+                                  <Button variant="ghost" size="icon" onClick={() => handleDelete(log)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
                                 )}
                               </>
                             )}
@@ -681,6 +688,11 @@ export default function DiarioBordoPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Diário — ${deleteTarget.motorista}: ${deleteTarget.cidade_origem} → ${deleteTarget.cidade_destino}` : undefined}
+      />
     </div>
   );
 }

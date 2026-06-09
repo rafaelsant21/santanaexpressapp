@@ -5,6 +5,7 @@ import { Card, Modal } from '@/components/ui/modal';
 import { Button, Input, Select, Label } from '@/components/ui/forms';
 import { CheckSquare, Plus, Edit, Trash2, Loader2, CheckCircle2, ShieldCheck, Package, AlertTriangle, FileText, Image as ImageIcon } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 import { VehicleSelect } from '@/components/ui/VehicleSelect';
 import { getVehicles, getChecklists, createChecklist, updateChecklist, deleteChecklist, updateVehicle } from '@/services/supabaseService';
 import { Vehicle, Checklist, TipoViagem } from '@/services/types';
@@ -105,6 +106,18 @@ export default function ChecklistPage() {
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
 
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Checklist | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteChecklist(deleteTarget.id);
+      toast.success('Registro excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -194,15 +207,9 @@ export default function ChecklistPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Deseja realmente excluir este checklist?')) return;
-    try {
-      await deleteChecklist(id);
-      toast.success('Registro excluído');
-      loadData();
-    } catch {
-      toast.error('Erro ao excluir');
-    }
+  const handleDelete = (log: Checklist) => {
+    setDeleteTarget(log);
+    openConfirm();
   };
 
   const getScore = (log: Checklist) => {
@@ -302,7 +309,7 @@ export default function ChecklistPage() {
                           {isAdmin && (
                             <>
                               <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(log)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
                             </>
                           )}
                         </div>
@@ -466,6 +473,11 @@ export default function ChecklistPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Checklist de ${deleteTarget.motorista} em ${deleteTarget.data?.substring(0,10)}` : undefined}
+      />
     </div>
   );
 }

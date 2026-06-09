@@ -8,6 +8,7 @@ import { getVehicles, createVehicle, updateVehicle, deleteVehicle } from '@/serv
 import { Vehicle, VehicleStatus } from '@/services/types';
 import { toast } from 'sonner';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 
 export default function FrotaPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -27,6 +28,18 @@ export default function FrotaPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteVehicle(deleteTarget.id);
+      toast.success('Veículo excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -95,16 +108,10 @@ export default function FrotaPage() {
     }
   }, [formData, editingVehicle, loadData]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Deseja realmente excluir este veículo?')) return;
-    try {
-      await deleteVehicle(id);
-      toast.success('Veículo excluído');
-      loadData();
-    } catch (error) {
-      toast.error('Erro ao excluir veículo');
-    }
-  }, [loadData]);
+  const handleDelete = useCallback((vehicle: Vehicle) => {
+    setDeleteTarget(vehicle);
+    openConfirm();
+  }, [openConfirm]);
 
   const filteredVehicles = useMemo(() => vehicles.filter(v => 
     v.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -176,7 +183,7 @@ export default function FrotaPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenModal(v)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)} className="text-danger hover:text-danger hover:bg-danger/10">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(v)} className="text-danger hover:text-danger hover:bg-danger/10">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -280,6 +287,11 @@ export default function FrotaPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Veículo ${deleteTarget.placa} — ${deleteTarget.modelo}` : undefined}
+      />
     </div>
   );
 }

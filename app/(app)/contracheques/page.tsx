@@ -34,6 +34,7 @@ import {
 } from '@/services/supabaseService';
 import { Contracheque } from '@/services/types';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 
 const MESES = [
   { value: 1, label: 'Janeiro' },
@@ -97,6 +98,18 @@ export default function ContrachequeesPage() {
 
   // Ações de PDF em andamento
   const [loadingPdf, setLoadingPdf] = useState<string | null>(null);
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Contracheque | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteContracheque(deleteTarget.id, deleteTarget.arquivo_pdf);
+      toast.success('Contracheque excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -227,16 +240,10 @@ export default function ContrachequeesPage() {
     }
   }, [formData, editingId, loadData]);
 
-  const handleDelete = useCallback(async (doc: Contracheque) => {
-    if (!confirm(`Excluir contracheque de ${doc.motorista_nome} — ${MESES[doc.mes - 1]?.label} ${doc.ano}?`)) return;
-    try {
-      await deleteContracheque(doc.id, doc.arquivo_pdf);
-      toast.success('Contracheque excluído');
-      loadData();
-    } catch {
-      toast.error('Erro ao excluir contracheque');
-    }
-  }, [loadData]);
+  const handleDelete = useCallback((doc: Contracheque) => {
+    setDeleteTarget(doc);
+    openConfirm();
+  }, [openConfirm]);
 
   const handleVisualize = useCallback(async (doc: Contracheque) => {
     setLoadingPdf(doc.id + '_view');
@@ -560,6 +567,11 @@ export default function ContrachequeesPage() {
           <Plus className="h-7 w-7" />
         </button>
       )}
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Contracheque de ${deleteTarget.motorista_nome} — ${MESES[deleteTarget.mes - 1]?.label} ${deleteTarget.ano}` : undefined}
+      />
     </div>
   );
 }

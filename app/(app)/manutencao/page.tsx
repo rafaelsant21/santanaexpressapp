@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 
 import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
@@ -39,6 +40,18 @@ export default function ManutencaoPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Maintenance | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteMaintenance(deleteTarget.id);
+      toast.success('Registro excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   // Filtro de mês — padrão: mês atual
   const [mesFilter, setMesFilter] = useState<string>(
@@ -141,16 +154,10 @@ export default function ManutencaoPage() {
     }
   }, [formData, editingLog, session?.id, vehicles, loadData]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Deseja realmente excluir este registro?')) return;
-    try {
-      await deleteMaintenance(id);
-      toast.success('Registro excluído');
-      loadData();
-    } catch (error: any) {
-      toast.error(`Erro ao excluir: ${error.message}`);
-    }
-  }, [loadData]);
+  const handleDelete = useCallback((log: Maintenance) => {
+    setDeleteTarget(log);
+    openConfirm();
+  }, [openConfirm]);
 
   const handleToggleStatus = useCallback(async (log: Maintenance) => {
     try {
@@ -288,7 +295,7 @@ export default function ManutencaoPage() {
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10">
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(log)} className="text-danger hover:text-danger hover:bg-danger/10">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>
@@ -431,6 +438,11 @@ export default function ManutencaoPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Manutenção — ${deleteTarget.descricao?.substring(0,40)}` : undefined}
+      />
     </div>
   );
 }

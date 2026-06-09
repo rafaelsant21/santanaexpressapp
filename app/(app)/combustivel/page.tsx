@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 
 import { parseBRL, getLocalDateOnly } from '@/lib/utils';
 
@@ -37,6 +38,18 @@ export default function CombustivelPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<FuelLog | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteFuelLog(deleteTarget.id);
+      toast.success('Registro excluído');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   // Filtro de mês — padrão: mês atual
   const [mesFilter, setMesFilter] = useState<string>(
@@ -136,16 +149,10 @@ export default function CombustivelPage() {
   }, [formData, editingLog, session?.id, vehicles, loadData]);
 
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Deseja realmente excluir este registro?')) return;
-    try {
-      await deleteFuelLog(id);
-      toast.success('Registro excluído');
-      loadData();
-    } catch (error) {
-      toast.error('Erro ao excluir registro');
-    }
-  }, [loadData]);
+  const handleDelete = useCallback((log: FuelLog) => {
+    setDeleteTarget(log);
+    openConfirm();
+  }, [openConfirm]);
 
   const exportExcel = useCallback(() => {
     if (filteredLogs.length === 0) { toast.error('Nenhum dado para exportar'); return; }
@@ -282,7 +289,7 @@ export default function CombustivelPage() {
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenModal(log)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="text-danger hover:text-danger hover:bg-danger/10">
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(log)} className="text-danger hover:text-danger hover:bg-danger/10">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>
@@ -409,6 +416,11 @@ export default function CombustivelPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Abastecimento de ${deleteTarget.motorista} em ${deleteTarget.data?.substring(0,10)}` : undefined}
+      />
     </div>
   );
 }

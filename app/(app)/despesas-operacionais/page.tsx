@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { parseBRL, getLocalDateISO, getLocalDateOnly } from '@/lib/utils';
 import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ConfirmDeleteModal, useConfirmDelete } from '@/components/ui/confirm-modal';
 
 const MOTORISTAS = ['Santana', 'Rodrigo', 'Marcos', 'Renato', 'Silvio'];
 const TIPOS_DESPESA: ExpenseType[] = [
@@ -103,6 +104,18 @@ export default function DespesasOperacionaisPage() {
 
   const { session } = useAuth();
   const isAdmin = session?.role === 'admin';
+
+  // Confirm delete
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const { confirmProps, openConfirm } = useConfirmDelete({
+    onConfirm: async () => {
+      if (!deleteTarget) return;
+      await deleteExpense(deleteTarget.id);
+      toast.success('Despesa excluída');
+      loadData();
+      setDeleteTarget(null);
+    },
+  });
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -182,16 +195,10 @@ export default function DespesasOperacionaisPage() {
     }
   }, [formData, editingExpense, session?.id, loadData]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!confirm('Deseja realmente excluir esta despesa?')) return;
-    try {
-      await deleteExpense(id);
-      toast.success('Despesa excluída');
-      loadData();
-    } catch {
-      toast.error('Erro ao excluir');
-    }
-  }, [loadData]);
+  const handleDelete = useCallback((exp: Expense) => {
+    setDeleteTarget(exp);
+    openConfirm();
+  }, [openConfirm]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(exp => {
@@ -411,7 +418,7 @@ export default function DespesasOperacionaisPage() {
                             )}
                             <Button variant="ghost" size="icon" onClick={() => handleOpenModal(exp)}><Edit className="h-4 w-4" /></Button>
                             {isAdmin && (
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(exp.id)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(exp)} className="text-danger hover:text-danger hover:bg-danger/10"><Trash2 className="h-4 w-4" /></Button>
                             )}
                           </div>
                         </td>
@@ -583,6 +590,11 @@ export default function DespesasOperacionaisPage() {
       >
         <Plus className="h-7 w-7" />
       </button>
+
+      <ConfirmDeleteModal
+        {...confirmProps}
+        itemName={deleteTarget ? `Despesa de ${deleteTarget.tipo} — ${deleteTarget.motorista}` : undefined}
+      />
     </div>
   );
 }
