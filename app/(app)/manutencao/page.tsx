@@ -135,14 +135,19 @@ export default function ManutencaoPage() {
         toast.success('Manutenção agendada/registrada');
       }
 
-      // ── Sincroniza KM do veículo na frota (apenas se concluída e KM maior) ──
-      const kmRegistrado = Number(formData.km) || 0;
-      if (kmRegistrado > 0 && formData.status === 'concluída') {
-        const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
-        if (vehicle && kmRegistrado > vehicle.km_atual) {
-          await updateVehicle(vehicle.id, { km_atual: kmRegistrado });
+      // ── Sincroniza KM do veículo na frota (não-bloqueante) ─────────────────
+      try {
+        const kmRegistrado = Number(formData.km) || 0;
+        if (kmRegistrado > 0 && formData.status === 'concluída') {
+          const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
+          if (vehicle && kmRegistrado > vehicle.km_atual) {
+            await updateVehicle(vehicle.id, { km_atual: kmRegistrado });
+          }
         }
+      } catch {
+        // Falha silenciosa — a manutenção já foi salva com sucesso
       }
+      // ───────────────────────────────────────────────────────────────────────
       // ─────────────────────────────────────────────────────────────────────────
 
       setIsModalOpen(false);

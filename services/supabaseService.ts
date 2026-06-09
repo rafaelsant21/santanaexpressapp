@@ -150,13 +150,20 @@ export const createVehicle = async (vehicle: Omit<Vehicle, 'id'>): Promise<Vehic
   return result;
 };
 
-export const updateVehicle = async (id: string, updates: Partial<Vehicle>): Promise<Vehicle> => {
-  const result = await call<Vehicle>(
-    supabase.from('vehicles').update(updates).eq('id', id).select().single(),
-    'updateVehicle'
-  );
+export const updateVehicle = async (id: string, updates: Partial<Vehicle>): Promise<Vehicle | null> => {
+  const { data, error } = await supabase
+    .from('vehicles')
+    .update(updates)
+    .eq('id', id)
+    .select();
+
+  if (error) {
+    warnLog('updateVehicle', error.message);
+    return null;
+  }
+
   invalidateCache('vehicles');
-  return result;
+  return (data?.[0] ?? null) as Vehicle | null;
 };
 
 export const deleteVehicle = async (id: string): Promise<void> => {

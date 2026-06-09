@@ -191,12 +191,16 @@ export default function ChecklistPage() {
         toast.success('Checklist registrado');
       }
 
-      // ── Sincroniza KM do veículo na frota ──────────────────────────────
-      const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
-      if (vehicle && Number(formData.km_atual) > vehicle.km_atual) {
-        await updateVehicle(vehicle.id, { km_atual: Number(formData.km_atual) });
+      // ── Sincroniza KM do veículo na frota (não-bloqueante) ─────────────────
+      try {
+        const vehicle = vehicles.find(v => v.id === formData.vehicle_id);
+        if (vehicle && Number(formData.km_atual) > vehicle.km_atual) {
+          await updateVehicle(vehicle.id, { km_atual: Number(formData.km_atual) });
+        }
+      } catch {
+        // Falha silenciosa — o checklist já foi salvo com sucesso
       }
-      // ───────────────────────────────────────────────────────────────────
+      // ───────────────────────────────────────────────────────────────────────
 
       setIsModalOpen(false);
       loadData();
