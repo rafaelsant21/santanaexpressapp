@@ -170,3 +170,18 @@ export interface Expense {
   comprovante_url?: string;
   status: ExpenseStatus;
 }
+
+// ─── CONTRACHEQUES ────────────────────────────────────────────────────────────
+
+export interface Contracheque {
+  id: string;
+  motorista_id: string;
+  motorista_nome: string;
+  mes: number;
+  ano: number;
+  arquivo_pdf: string;
+  observacoes?: string;
+  data_envio: string;
+  created_at?: string;
+  updated_at?: string;
+}

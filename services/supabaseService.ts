@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent } from './types';
+import { Vehicle, FuelLog, Maintenance, Checklist, Logbook, Expense, TripEvent, Contracheque } from './types';
 import { withRetry, warnLog, devLog } from '@/lib/utils';
 
 // ─── HELPERS ────────────────────────────────────────────────────────────────
@@ -518,3 +518,87 @@ export const updateProfileRole = async (id: string, role: 'admin' | 'motorista')
   invalidateCache('profiles');
   return result;
 };
+
+// ─── CONTRACHEQUES ────────────────────────────────────────────────────────────
+
+/** Upload de PDF para o bucket privado contracheques */
+export const uploadContracheque = async (file: File, motoristaId: string): Promise<string> => {
+  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+  const fileName = `${motoristaId}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+  const { error } = await supabase.storage
+    .from('contracheques')
+    .upload(fileName, file, { contentType: 'application/pdf', upsert: false });
+
+  if (error) handleError(error, 'uploadContracheque');
+  return fileName;
+};
+
+/** Gera URL assinada para visualização/download (válida por 1 hora) */
+export const getContrachequeUrl = async (filePath: string): Promise<string> => {
+  const { data, error } = await supabase.storage
+    .from('contracheques')
+    .createSignedUrl(filePath, 3600);
+  if (error) handleError(error, 'getContrachequeUrl');
+  return data!.signedUrl;
+};
+
+/** Busca contracheques — admin vê todos, motorista vê só os seus */
+export const getContracheques = async (): Promise<Contracheque[]> => {
+  const data = await call<Contracheque[]>(
+    supabase
+      .from('contracheques')
+      .select('*')
+      .order('ano', { ascending: false })
+      .order('mes', { ascending: false })
+      .limit(200),
+    'getContracheques'
+  );
+  return data ?? [];
+};
+
+export const createContracheque = async (
+  payload: Omit<Contracheque, 'id' | 'created_at' | 'updated_at'>
+): Promise<Contracheque> => {
+  const result = await call<Contracheque>(
+    supabase.from('contracheques').insert([payload]).select().single(),
+    'createContracheque'
+  );
+  return result;
+};
+
+export const updateContracheque = async (
+  id: string,
+  updates: Partial<Omit<Contracheque, 'id' | 'created_at'>>
+): Promise<Contracheque> => {
+  const result = await call<Contracheque>(
+    supabase.from('contracheques').update(updates).eq('id', id).select().single(),
+    'updateContracheque'
+  );
+  return result;
+};
+
+export const deleteContracheque = async (id: string, filePath: string): Promise<void> => {
+  // Deletar registro do banco
+  await call(
+    supabase.from('contracheques').delete().eq('id', id),
+    'deleteContracheque',
+    0
+  );
+  // Deletar arquivo do storage
+  await supabase.storage.from('contracheques').remove([filePath]);
+};
+
+/** Busca perfis disponíveis para o admin associar contracheques */
+export const getProfilesForContracheque = async (): Promise<{ id: string; name: string; role: string }[]> => {
+  const data = await call<{ id: string; name: string; role: string }[]>(
+    supabase
+      .from('profiles')
+      .select('id, name, role')
+      .eq('role', 'motorista')
+      .order('name', { ascending: true }),
+    'getProfilesForContracheque'
+  );
+  return data ?? [];
+};
+

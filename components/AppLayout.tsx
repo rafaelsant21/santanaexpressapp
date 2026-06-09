@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
-import { Truck, Fuel, Wrench, CheckSquare, LayoutDashboard, LogOut, Menu, Shield, User, BookOpen, Receipt, Loader2 } from 'lucide-react';
+import { Truck, Fuel, Wrench, CheckSquare, LayoutDashboard, LogOut, Menu, Shield, User, BookOpen, Receipt, FileText, Loader2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -21,6 +21,7 @@ const adminNavItems = [
   { name: 'Combustível', href: '/combustivel', icon: Fuel },
   { name: 'Manutenção', href: '/manutencao', icon: Wrench },
   { name: 'Despesas', href: '/despesas-operacionais', icon: Receipt },
+  { name: 'Contracheques', href: '/contracheques', icon: FileText },
 ];
 
 const driverNavItems = [
@@ -29,6 +30,7 @@ const driverNavItems = [
   { name: 'Combustível', href: '/combustivel', icon: Fuel },
   { name: 'Manutenção', href: '/manutencao', icon: Wrench },
   { name: 'Despesas', href: '/despesas-operacionais', icon: Receipt },
+  { name: 'Contracheques', href: '/contracheques', icon: FileText },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
